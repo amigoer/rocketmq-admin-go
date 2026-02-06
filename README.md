@@ -74,7 +74,7 @@ import (
 
 func main() {
     // 1. 创建 Admin 客户端
-    client, err := admin.NewAdminClient(
+    client, err := admin.NewClient(
         admin.WithNameServers([]string{"127.0.0.1:9876"}), // NameServer 地址
         admin.WithTimeout(5 * time.Second),                 // 请求超时时间
     )
