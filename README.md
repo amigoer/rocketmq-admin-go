@@ -16,36 +16,13 @@
     </a>
     <img src="https://img.shields.io/badge/RocketMQ-4.x%20%2F%205.x-brightgreen" alt="RocketMQ Version">
   </p>
+
+  <p>
+    官方的 <a href="https://github.com/apache/rocketmq-client-go">rocketmq-client-go</a> 专注于消息的<strong>生产</strong>与<strong>消费</strong>，但在运维管理方面缺乏原生支持。<br>
+    由此，本项目应运而生。
+  </p>
+
 </div>
-
----
-
-## 📑 目录
-
-- [📑 目录](#-目录)
-- [📖 简介](#-简介)
-- [✨ 核心特性](#-核心特性)
-- [🛠️ 安装](#️-安装)
-- [🚀 快速开始](#-快速开始)
-- [🏗️ 架构概览](#️-架构概览)
-- [🧩 接口能力矩阵](#-接口能力矩阵)
-- [📚 技术文档](#-技术文档)
-- [🤝 贡献与支持](#-贡献与支持)
-- [📄 许可证](#-许可证)
-
----
-
-## 📖 简介
-
-**RocketMQ Admin Go** 是一个纯 Go 语言实现的 RocketMQ 运维管理 SDK。
-
-官方的 [rocketmq-client-go](https://github.com/apache/rocketmq-client-go) 专注于消息的**生产**与**消费**，但在运维管理（创建 Topic、查询集群状态、重置消费位点等）方面缺乏原生支持。由此，本项目应运而生。
-
-- ✅ **100% 接口覆盖**：完整实现 Java 版 `MQAdminExt` 的所有运维接口（P0-P3）。
-- ✅ **原生协议支持**：直接基于 RocketMQ Remoting 协议，无中间层，不仅兼容性好，而且性能极佳。
-- ✅ **开箱即用**：提供清晰的 API 和丰富的示例，几行代码即可管理百万级消息集群。
-
----
 
 ## ✨ 核心特性
 
@@ -58,7 +35,7 @@
 | **权限安全**   | 完整的 ACL 用户管理、白名单/黑名单规则控制                       |   ✅    |
 | **高级功能**   | KV 配置、Controller 模式管理 (5.x)、**冷数据流控**、RocksDB 调优 |   ✅    |
 
----
+
 
 ## 🛠️ 安装
 
@@ -68,7 +45,7 @@ go get github.com/codermast/rocketmq-admin-go
 
 > 要求 Go 1.21 或更高版本。
 
----
+
 
 ## 🚀 快速开始
 
@@ -122,7 +99,7 @@ func main() {
 
 更多示例请参考 [examples](./examples) 目录。
 
----
+
 
 ## 🏗️ 架构概览
 
@@ -151,32 +128,17 @@ graph TD
     Remoting -->|"TCP 长连接"| Controller
 ```
 
----
 
-## 🧩 接口能力矩阵
 
-本项目完整实现了 Java 版 `MQAdminExt` 的 112 个原生接口，覆盖 RocketMQ 所有运维场景：
 
-| 功能模块           | 核心能力说明                              | 接口数量 |   状态   |
-| :----------------- | :---------------------------------------- | :------: | :------: |
-| **Topic 管理**     | 增删改查、路由查询、配置管理、静态 Topic  |    20    |    ✅     |
-| **消费者管理**     | 订阅组管理、消费进度监控、连接查询        |    22    |    ✅     |
-| **Broker 管理**    | 运行时状态、配置动态更新、写权限控制      |    12    |    ✅     |
-| **消息与 Offset**  | 消息轨迹、位点重置、死信处理、直接消费    |    13    |    ✅     |
-| **集群与基础**     | 集群拓扑、NameServer 配置、生命周期管理   |    7     |    ✅     |
-| **权限安全 (ACL)** | 用户管理、白名单控制、权限规则配置        |    10    |    ✅     |
-| **高级运维**       | KV配置、Controller模式、流控、RocksDB调优 |    26    |    ✅     |
-| **生产者管理**     | 生产者连接信息查询                        |    2     |    ✅     |
-| **总计**           | **全功能集合**                            | **112**  | **100%** |
 
----
 
 ## 📚 技术文档
 
 - [接口对照表](./docs/interfaces.md): 详细列出了所有支持的 Admin 接口及其实现状态。
 - [协议实现解析](./docs/rocketmq_protocol.md): 深入解析 RocketMQ Remoting 协议的纯 Go 实现原理。
 
----
+
 
 ## 🤝 贡献与支持
 
@@ -188,7 +150,7 @@ graph TD
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 提交 Pull Request
 
----
+
 
 ## 📄 许可证
 
