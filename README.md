@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/logo.png" width="200" alt="RocketMQ Admin Go Logo">
+  <img src="docs/logo.png" width="512" alt="RocketMQ Admin Go Logo">
   <h1>🚀 RocketMQ Admin Go</h1>
   <p><strong>专为 Go 语言打造的 Apache RocketMQ 运维管理客户端</strong></p>
   <p>全功能复刻 Java 版 <code>MQAdminExt</code> 能力，轻量、高效、零依赖。</p>
