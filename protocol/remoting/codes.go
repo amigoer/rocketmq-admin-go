@@ -205,6 +205,75 @@ const (
 
 	// ControllerElectMaster Controller 选举 Master
 	ControllerElectMaster = 503
+
+	// ControllerGetConfig 获取 Controller 配置
+	ControllerGetConfig = 504
+
+	// ControllerUpdateConfig 更新 Controller 配置
+	ControllerUpdateConfig = 505
+
+	// CleanControllerBrokerData 清理 Controller Broker 数据
+	CleanControllerBrokerData = 506
+
+	// ========== KV 配置管理 ==========
+
+	// PutKVConfig 存储 KV 配置
+	PutKVConfig = 100
+
+	// GetKVConfig 获取 KV 配置
+	GetKVConfig = 101
+
+	// DeleteKVConfig 删除 KV 配置
+	DeleteKVConfig = 102
+
+	// GetKVListByNamespace 按命名空间获取 KV 列表
+	GetKVListByNamespace = 219
+
+	// ========== 高级清理操作 ==========
+
+	// CleanExpiredConsumeQueue 清理过期消费队列
+	CleanExpiredConsumeQueue = 213
+
+	// CleanUnusedTopic 清理未使用 Topic
+	CleanUnusedTopic = 214
+
+	// DeleteExpiredCommitLog 删除过期 CommitLog
+	DeleteExpiredCommitLog = 217
+
+	// QueryConsumeQueue 查询消费队列
+	QueryConsumeQueue = 218
+
+	// ========== Broker 容器管理 ==========
+
+	// AddBrokerToContainer 添加 Broker 到容器
+	AddBrokerToContainer = 350
+
+	// RemoveBrokerFromContainer 从容器移除 Broker
+	RemoveBrokerFromContainer = 351
+
+	// GetBrokerEpochCache 获取 Broker Epoch 缓存
+	GetBrokerEpochCache = 340
+
+	// ========== 消息高级操作 ==========
+
+	// ConsumeMessageDirectly 直接消费消息
+	ConsumeMessageDirectly = 309
+
+	// ResumeCheckHalfMessage 恢复检查半消息
+	ResumeCheckHalfMessage = 341
+
+	// SetMessageRequestMode 设置消息请求模式
+	SetMessageRequestMode = 342
+
+	// ========== 同步状态 ==========
+
+	// GetInSyncStateData 获取同步状态数据
+	GetInSyncStateData = 338
+
+	// ========== 静态 Topic ==========
+
+	// CreateStaticTopic 创建静态 Topic
+	CreateStaticTopic = 345
 )
 
 // 响应码定义
