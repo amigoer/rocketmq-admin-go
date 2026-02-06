@@ -112,27 +112,27 @@ func main() {
 
 ```mermaid
 graph TD
-    User[用户应用 / 运维平台] -->|API 调用| AdminClient
+    User["用户应用 / 运维平台"] -->|"API 调用"| AdminClient
     
-    subgraph RocketMQ Admin Go SDK
-        AdminClient[Admin 客户端]
-        Remoting[通信协议层]
-        Codec[序列化/反序列化]
+    subgraph SDK ["RocketMQ Admin Go SDK"]
+        AdminClient["Admin 客户端"]
+        Remoting["通信协议层"]
+        Codec["序列化/反序列化"]
     end
 
     AdminClient --> Remoting
     Remoting --> Codec
     
-    subgraph RocketMQ Cluster
-        NS[NameServer]
-        BrokerMaster[Broker Master]
-        BrokerSlave[Broker Slave]
-        Controller[Controller (5.x)]
+    subgraph Cluster ["RocketMQ Cluster"]
+        NS["NameServer"]
+        BrokerMaster["Broker Master"]
+        BrokerSlave["Broker Slave"]
+        Controller["Controller (5.x)"]
     end
 
-    Remoting -->|TCP 长连接| NS
-    Remoting -->|TCP 长连接| BrokerMaster
-    Remoting -->|TCP 长连接| Controller
+    Remoting -->|"TCP 长连接"| NS
+    Remoting -->|"TCP 长连接"| BrokerMaster
+    Remoting -->|"TCP 长连接"| Controller
 ```
 
 ---
