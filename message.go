@@ -238,3 +238,83 @@ func (c *Client) SearchOffset(ctx context.Context, brokerAddr, topic string, que
 
 	return result.Offset, nil
 }
+
+// =============================================================================
+// 消息查询与详情
+// =============================================================================
+
+// QueryMessage 按 Key 查询消息
+func (c *Client) QueryMessage(ctx context.Context, topic, key string, maxNum int, begin, end int64) ([]*MessageExt, error) {
+	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
+	if err != nil {
+		return nil, err
+	}
+
+	var allMessages []*MessageExt
+	for _, brokerData := range routeData.BrokerDatas {
+		// 仅查询 Master
+		brokerAddr := brokerData.BrokerAddrs[0]
+		if brokerAddr == "" {
+			continue
+		}
+
+		extFields := map[string]string{
+			"topic":  topic,
+			"key":    key,
+			"maxNum": fmt.Sprintf("%d", maxNum),
+			"begin":  fmt.Sprintf("%d", begin),
+			"end":    fmt.Sprintf("%d", end),
+		}
+
+		cmd := remoting.NewRequest(remoting.QueryMessage, extFields)
+		resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+		if err != nil {
+			continue
+		}
+
+		if resp.Code != remoting.Success {
+			continue
+		}
+
+		var msgs []*MessageExt
+		if err := json.Unmarshal(resp.Body, &msgs); err == nil {
+			allMessages = append(allMessages, msgs...)
+		}
+	}
+
+	return allMessages, nil
+}
+
+// ViewMessage 按 ID 查询消息详情
+func (c *Client) ViewMessage(ctx context.Context, topic, msgId string) (*MessageExt, error) {
+	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
+	if err != nil {
+		return nil, err
+	}
+
+	extFields := map[string]string{
+		"topic": topic,
+		"msgId": msgId,
+	}
+	cmd := remoting.NewRequest(remoting.ViewMessageById, extFields)
+
+	for _, brokerData := range routeData.BrokerDatas {
+		// 查询任意可用节点（虽然 ID 可能指定了存储节点，但简单遍历也是一种策略）
+		// 更严谨的做法是解析 offsetMsgId 找到具体 broker，或者遍历所有 master
+		for _, brokerAddr := range brokerData.BrokerAddrs {
+			resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+			if err != nil {
+				continue
+			}
+
+			if resp.Code == remoting.Success {
+				var msg MessageExt
+				if err := json.Unmarshal(resp.Body, &msg); err == nil {
+					return &msg, nil
+				}
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("未找到消息: %s", msgId)
+}

@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	admin "github.com/codermast/rocketmq-admin-go"
 )
@@ -31,10 +32,10 @@ func main() {
 	// 示例 1: 创建订阅组
 	fmt.Println("=== 创建订阅组 ===")
 	groupConfig := admin.SubscriptionGroupConfig{
-		GroupName:          "TestConsumerGroup",
-		ConsumeEnable:      true,
-		RetryQueueNums:     1,
-		RetryMaxTimes:      16,
+		GroupName:      "TestConsumerGroup",
+		ConsumeEnable:  true,
+		RetryQueueNums: 1,
+		RetryMaxTimes:  16,
 	}
 	if err := client.CreateSubscriptionGroup(ctx, "127.0.0.1:10911", groupConfig); err != nil {
 		log.Printf("创建订阅组失败: %v", err)
@@ -74,4 +75,3 @@ func main() {
 		fmt.Printf("重置队列数: %d\n", len(offsets))
 	}
 }
-
