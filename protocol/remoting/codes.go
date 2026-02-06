@@ -106,6 +106,98 @@ const (
 	// GetNamesrvConfig 获取 NameServer 配置
 	GetNamesrvConfig = 319
 
+	// ========== ACL 用户管理相关 ==========
+
+	// CreateUser 创建用户
+	CreateUser = 356
+
+	// UpdateUser 更新用户
+	UpdateUser = 357
+
+	// DeleteUser 删除用户
+	DeleteUser = 358
+
+	// GetUser 获取用户
+	GetUser = 359
+
+	// ListUser 列出用户
+	ListUser = 360
+
+	// CreateAcl 创建 ACL
+	CreateAcl = 361
+
+	// UpdateAcl 更新 ACL
+	UpdateAcl = 362
+
+	// DeleteAcl 删除 ACL
+	DeleteAcl = 363
+
+	// GetAcl 获取 ACL
+	GetAcl = 364
+
+	// ListAcl 列出 ACL
+	ListAcl = 365
+
+	// ========== 更多 Topic 相关 ==========
+
+	// GetAllTopicConfig 获取所有 Topic 配置
+	GetAllTopicConfig = 21
+
+	// QueryTopicConsumeByWho 查询 Topic 被谁消费
+	QueryTopicConsumeByWho = 300
+
+	// ========== 更多消费者相关 ==========
+
+	// QueryTopicsByConsumer 查询消费者订阅的 Topic
+	QueryTopicsByConsumer = 343
+
+	// QuerySubscription 查询订阅信息
+	QuerySubscription = 344
+
+	// QueryConsumeTimeSpan 查询消费时间跨度
+	QueryConsumeTimeSpan = 302
+
+	// GetConsumeStatus 获取消费状态
+	GetConsumeStatus = 304
+
+	// GetAllSubscriptionGroup 获取所有订阅组
+	GetAllSubscriptionGroup = 201
+
+	// ========== 生产者相关 ==========
+
+	// GetProducerInfo 获取生产者信息
+	GetProducerInfo = 305
+
+	// ========== 消息相关 ==========
+
+	// QueryMessage 查询消息
+	QueryMessage = 12
+
+	// ViewMessageById 按 ID 查看消息
+	ViewMessageById = 33
+
+	// ========== Offset 扩展 ==========
+
+	// UpdateConsumeOffset 更新消费 Offset
+	UpdateConsumeOffset = 221
+
+	// ResetOffsetByQueueId 按队列 ID 重置 Offset
+	ResetOffsetByQueueId = 222
+
+	// ========== Broker 扩展 ==========
+
+	// WipeWritePermOfBroker 清除 Broker 写权限
+	WipeWritePermOfBroker = 41
+
+	// AddWritePermOfBroker 添加 Broker 写权限
+	AddWritePermOfBroker = 42
+
+	// ViewBrokerStatsData 查看 Broker 统计数据
+	ViewBrokerStatsData = 210
+
+	// GetBrokerHAStatus 获取 Broker HA 状态
+	GetBrokerHAStatus = 339
+
 	// ========== Controller 相关 (RocketMQ 5.x) ==========
 
 	// ControllerGetMetadataInfo Controller 获取元数据
@@ -138,4 +230,3 @@ const (
 	// ConsumerNotOnline 消费者不在线
 	ConsumerNotOnline = 206
 )
-
