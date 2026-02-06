@@ -1,27 +1,32 @@
-<![CDATA[# RocketMQ Admin 接口对照表
+# RocketMQ Admin 接口对照表
 
 本文档列出了需要对接的 RocketMQ 运维管理接口，基于 Java 版本 `MQAdminExt` 接口整理。
 
 ## 目录
 
-1. [生命周期管理](#1-生命周期管理)
-2. [Broker 管理](#2-broker-管理)
-3. [Topic 管理](#3-topic-管理)
-4. [消费者组管理](#4-消费者组管理)
-5. [生产者管理](#5-生产者管理)
-6. [集群管理](#6-集群管理)
-7. [消息操作](#7-消息操作)
-8. [Offset 管理](#8-offset-管理)
-9. [KV 配置管理](#9-kv-配置管理)
-10. [ACL 权限管理](#10-acl-权限管理)
-11. [Controller 管理](#11-controller-管理)
-12. [高级功能](#12-高级功能)
+- [RocketMQ Admin 接口对照表](#rocketmq-admin-接口对照表)
+  - [目录](#目录)
+  - [1. 生命周期管理](#1-生命周期管理)
+  - [2. Broker 管理](#2-broker-管理)
+  - [3. Topic 管理](#3-topic-管理)
+  - [4. 消费者组管理](#4-消费者组管理)
+  - [5. 生产者管理](#5-生产者管理)
+  - [6. 集群管理](#6-集群管理)
+  - [7. 消息操作](#7-消息操作)
+  - [8. Offset 管理](#8-offset-管理)
+  - [9. KV 配置管理](#9-kv-配置管理)
+  - [10. ACL 权限管理](#10-acl-权限管理)
+  - [11. Controller 管理](#11-controller-管理)
+  - [12. 高级功能](#12-高级功能)
+  - [优先级说明](#优先级说明)
+  - [接口统计](#接口统计)
+  - [版本更新记录](#版本更新记录)
 
 ---
 
 ## 1. 生命周期管理
 
-| 序号 | Java 方法名  | Go 方法名（规划） | 说明           | 优先级 |
+| 序号 | Java 方法名  | Go 方法名 | 说明           | 优先级 |
 | ---- | ------------ | ----------------- | -------------- | ------ |
 | 1    | `start()`    | `Start()`         | 启动管理客户端 | P0     |
 | 2    | `shutdown()` | `Close()`         | 关闭管理客户端 | P0     |
@@ -30,7 +35,7 @@
 
 ## 2. Broker 管理
 
-| 序号 | Java 方法名                   | Go 方法名（规划）             | 说明                   | 优先级 |
+| 序号 | Java 方法名                   | Go 方法名             | 说明                   | 优先级 |
 | ---- | ----------------------------- | ----------------------------- | ---------------------- | ------ |
 | 1    | `addBrokerToContainer()`      | `AddBrokerToContainer()`      | 添加 Broker 到容器     | P2     |
 | 2    | `removeBrokerFromContainer()` | `RemoveBrokerFromContainer()` | 从容器移除 Broker      | P2     |
@@ -49,7 +54,7 @@
 
 ## 3. Topic 管理
 
-| 序号 | Java 方法名                        | Go 方法名（规划）                  | 说明                        | 优先级 |
+| 序号 | Java 方法名                        | Go 方法名                  | 说明                        | 优先级 |
 | ---- | ---------------------------------- | ---------------------------------- | --------------------------- | ------ |
 | 1    | `createAndUpdateTopicConfig()`     | `CreateAndUpdateTopicConfig()`     | 创建/更新 Topic 配置        | P0     |
 | 2    | `createAndUpdateTopicConfigList()` | `CreateAndUpdateTopicConfigList()` | 批量创建/更新 Topic 配置    | P1     |
@@ -76,7 +81,7 @@
 
 ## 4. 消费者组管理
 
-| 序号 | Java 方法名                                    | Go 方法名（规划）                              | 说明                   | 优先级 |
+| 序号 | Java 方法名                                    | Go 方法名                              | 说明                   | 优先级 |
 | ---- | ---------------------------------------------- | ---------------------------------------------- | ---------------------- | ------ |
 | 1    | `createAndUpdateSubscriptionGroupConfig()`     | `CreateAndUpdateSubscriptionGroupConfig()`     | 创建/更新订阅组配置    | P0     |
 | 2    | `createAndUpdateSubscriptionGroupConfigList()` | `CreateAndUpdateSubscriptionGroupConfigList()` | 批量创建/更新订阅组    | P1     |
@@ -105,7 +110,7 @@
 
 ## 5. 生产者管理
 
-| 序号 | Java 方法名                       | Go 方法名（规划）                 | 说明               | 优先级 |
+| 序号 | Java 方法名                       | Go 方法名                 | 说明               | 优先级 |
 | ---- | --------------------------------- | --------------------------------- | ------------------ | ------ |
 | 1    | `examineProducerConnectionInfo()` | `ExamineProducerConnectionInfo()` | 查询生产者连接信息 | P1     |
 | 2    | `getAllProducerInfo()`            | `GetAllProducerInfo()`            | 获取所有生产者信息 | P1     |
@@ -114,7 +119,7 @@
 
 ## 6. 集群管理
 
-| 序号 | Java 方法名                  | Go 方法名（规划）            | 说明                     | 优先级 |
+| 序号 | Java 方法名                  | Go 方法名            | 说明                     | 优先级 |
 | ---- | ---------------------------- | ---------------------------- | ------------------------ | ------ |
 | 1    | `examineBrokerClusterInfo()` | `ExamineBrokerClusterInfo()` | 查询集群信息             | P0     |
 | 2    | `getNameServerAddressList()` | `GetNameServerAddressList()` | 获取 NameServer 地址列表 | P0     |
@@ -126,7 +131,7 @@
 
 ## 7. 消息操作
 
-| 序号 | Java 方法名                      | Go 方法名（规划）                | 说明             | 优先级 |
+| 序号 | Java 方法名                      | Go 方法名                | 说明             | 优先级 |
 | ---- | -------------------------------- | -------------------------------- | ---------------- | ------ |
 | 1    | `queryMessage()`                 | `QueryMessage()`                 | 查询消息         | P1     |
 | 2    | `messageTrackDetail()`           | `MessageTrackDetail()`           | 消息轨迹详情     | P1     |
@@ -139,7 +144,7 @@
 
 ## 8. Offset 管理
 
-| 序号 | Java 方法名                   | Go 方法名（规划）             | 说明                     | 优先级 |
+| 序号 | Java 方法名                   | Go 方法名             | 说明                     | 优先级 |
 | ---- | ----------------------------- | ----------------------------- | ------------------------ | ------ |
 | 1    | `resetOffsetByTimestampOld()` | `ResetOffsetByTimestampOld()` | 按时间戳重置偏移（旧版） | P1     |
 | 2    | `resetOffsetByTimestamp()`    | `ResetOffsetByTimestamp()`    | 按时间戳重置偏移         | P0     |
@@ -153,7 +158,7 @@
 
 ## 9. KV 配置管理
 
-| 序号 | Java 方法名                 | Go 方法名（规划）           | 说明                   | 优先级 |
+| 序号 | Java 方法名                 | Go 方法名           | 说明                   | 优先级 |
 | ---- | --------------------------- | --------------------------- | ---------------------- | ------ |
 | 1    | `putKVConfig()`             | `PutKVConfig()`             | 存储 KV 配置           | P2     |
 | 2    | `getKVConfig()`             | `GetKVConfig()`             | 获取 KV 配置           | P2     |
@@ -166,7 +171,7 @@
 
 ## 10. ACL 权限管理
 
-| 序号 | Java 方法名    | Go 方法名（规划） | 说明          | 优先级 |
+| 序号 | Java 方法名    | Go 方法名 | 说明          | 优先级 |
 | ---- | -------------- | ----------------- | ------------- | ------ |
 | 1    | `createUser()` | `CreateUser()`    | 创建用户      | P1     |
 | 2    | `updateUser()` | `UpdateUser()`    | 更新用户      | P1     |
@@ -183,7 +188,7 @@
 
 ## 11. Controller 管理
 
-| 序号 | Java 方法名                   | Go 方法名（规划）             | 说明                        | 优先级 |
+| 序号 | Java 方法名                   | Go 方法名                     | 说明                        | 优先级 |
 | ---- | ----------------------------- | ----------------------------- | --------------------------- | ------ |
 | 1    | `getControllerMetaData()`     | `GetControllerMetaData()`     | 获取 Controller 元数据      | P2     |
 | 2    | `getControllerConfig()`       | `GetControllerConfig()`       | 获取 Controller 配置        | P2     |
@@ -195,7 +200,7 @@
 
 ## 12. 高级功能
 
-| 序号 | Java 方法名                          | Go 方法名（规划）                    | 说明                    | 优先级 |
+| 序号 | Java 方法名                          | Go 方法名                    | 说明                    | 优先级 |
 | ---- | ------------------------------------ | ------------------------------------ | ----------------------- | ------ |
 | 1    | `queryConsumeQueue()`                | `QueryConsumeQueue()`                | 查询消费队列            | P2     |
 | 2    | `cleanExpiredConsumerQueue()`        | `CleanExpiredConsumerQueue()`        | 清理过期消费队列        | P2     |
@@ -250,4 +255,3 @@
 | v0.2 | TBD        | 完成 P1 接口           |
 | v0.3 | TBD        | 完成 P2 接口           |
 | v1.0 | TBD        | 全部接口完成，正式发布 |
-]]>
