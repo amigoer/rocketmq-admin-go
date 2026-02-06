@@ -250,4 +250,3 @@ type MessageQueue struct {
 func (mq *MessageQueue) String() string {
 	return mq.Topic + "-" + mq.BrokerName + "-" + string(rune(mq.QueueId))
 }
-
