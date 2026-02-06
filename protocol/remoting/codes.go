@@ -274,6 +274,35 @@ const (
 
 	// CreateStaticTopic 创建静态 Topic
 	CreateStaticTopic = 345
+
+	// ========== P3 边缘功能 ==========
+
+	// UpdateColdDataFlowCtrGroupConfig 更新冷数据流控配置
+	UpdateColdDataFlowCtrGroupConfig = 410
+
+	// RemoveColdDataFlowCtrGroupConfig 移除冷数据流控配置
+	RemoveColdDataFlowCtrGroupConfig = 411
+
+	// GetColdDataFlowCtrInfo 获取冷数据流控信息
+	GetColdDataFlowCtrInfo = 412
+
+	// SetCommitLogReadAheadMode 设置 CommitLog 预读模式
+	SetCommitLogReadAheadMode = 413
+
+	// ExportRocksDBConfigToJson 导出 RocksDB 配置
+	ExportRocksDBConfigToJson = 414
+
+	// CheckRocksdbCqWriteProgress 检查 RocksDB CQ 写入进度
+	CheckRocksdbCqWriteProgress = 415
+
+	// SwitchTimerEngine 切换定时器引擎
+	SwitchTimerEngine = 416
+
+	// ExportPopRecords 导出 Pop 记录
+	ExportPopRecords = 417
+
+	// SearchOffset 搜索偏移（已废弃）
+	SearchOffset = 29
 )
 
 // 响应码定义
