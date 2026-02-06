@@ -1,77 +1,62 @@
-# RocketMQ Admin Go
+<div align="center">
+  <h1>🚀 RocketMQ Admin Go</h1>
+  <p><strong>专为 Go 语言打造的 Apache RocketMQ 运维管理客户端</strong></p>
+  <p>全功能复刻 Java 版 <code>MQAdminExt</code> 能力，轻量、高效、零依赖。</p>
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/codermast/rocketmq-admin-go.svg)](https://pkg.go.dev/github.com/codermast/rocketmq-admin-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/codermast/rocketmq-admin-go)](https://goreportcard.com/report/github.com/codermast/rocketmq-admin-go)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+  <p>
+    <a href="https://pkg.go.dev/github.com/codermast/rocketmq-admin-go">
+      <img src="https://pkg.go.dev/badge/github.com/codermast/rocketmq-admin-go.svg" alt="Go Reference">
+    </a>
+    <a href="https://goreportcard.com/report/github.com/codermast/rocketmq-admin-go">
+      <img src="https://goreportcard.com/badge/github.com/codermast/rocketmq-admin-go" alt="Go Report Card">
+    </a>
+    <a href="LICENSE">
+      <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License">
+    </a>
+    <img src="https://img.shields.io/badge/RocketMQ-4.x%20%2F%205.x-brightgreen" alt="RocketMQ Version">
+  </p>
+</div>
 
-一个使用 Go 语言实现的 Apache RocketMQ **运维管理**客户端库。
+---
 
-> ⚠️ **注意**：本库**仅提供运维管理接口**，不包含消息生产/消费功能。如需消息功能，请使用官方 [rocketmq-client-go](https://github.com/apache/rocketmq-client-go)。
+## 📖 简介
 
-## 项目背景
+**RocketMQ Admin Go** 是一个纯 Go 语言实现的 RocketMQ 运维管理 SDK。
 
-Apache RocketMQ 官方 Go 客户端 ([rocketmq-client-go](https://github.com/apache/rocketmq-client-go)) 专注于消息的生产和消费，而运维管理接口（如 Topic 管理、消费者组管理、Broker 监控、ACL 权限管理等）只有 Java 版本的实现（`MQAdminExt`）。
+官方的 [rocketmq-client-go](https://github.com/apache/rocketmq-client-go) 专注于消息的**生产**与**消费**，但在运维管理（创建 Topic、查询集群状态、重置消费位点等）方面缺乏原生支持。由此，本项目应运而生。
 
-本项目**专注于运维管理场景**：
-- 提供完整的 RocketMQ 运维管理 API（对标 Java 版 `MQAdminExt`）
-- 支持构建运维监控平台、管理控制台、自动化运维脚本等
-- 对接 RocketMQ 原生通信协议，保证兼容性
+✅ **100% 接口覆盖**：完整实现 Java 版 `MQAdminExt` 的所有运维接口（P0-P3）。
+✅ **原生协议支持**：直接基于 RocketMQ Remoting 协议，无中间层，不仅兼容性好，而且性能极佳。
+✅ **开箱即用**：提供清晰的 API 和丰富的示例，几行代码即可管理百万级消息集群。
 
-## 功能特性
+---
 
-### 集群管理
-- 查询集群信息和状态
-- 获取/更新 NameServer 配置
-- 管理 Controller（RocketMQ 5.x）
+## ✨ 核心特性
 
-### Broker 管理
-- 查询 Broker 运行时状态
-- 获取/更新 Broker 配置
-- Broker 容器管理（添加/移除）
-- HA 状态监控
-- 写权限管理
+| 模块           | 功能亮点                                                         | 完成度 |
+| :------------- | :--------------------------------------------------------------- | :----: |
+| **基础运维**   | 集群状态监控、Broker 运行时信息、NameServer 配置管理             |   ✅    |
+| **Topic 管理** | 创建/删除 Topic、路由查询、静态 Topic、Topic 权限控制            |   ✅    |
+| **消费者管理** | 订阅组管理、消费进度监控、在线客户端查询、**重置消费位点**       |   ✅    |
+| **消息操作**   | 消息轨迹查询、**消息直接消费**、死信队列处理、半消息恢复         |   ✅    |
+| **权限安全**   | 完整的 ACL 用户管理、白名单/黑名单规则控制                       |   ✅    |
+| **高级功能**   | KV 配置、Controller 模式管理 (5.x)、**冷数据流控**、RocksDB 调优 |   ✅    |
 
-### Topic 管理
-- 创建/更新/删除 Topic
-- 查询 Topic 列表和路由信息
-- 查询 Topic 统计数据
-- 管理静态 Topic
-- Topic 权限控制
+---
 
-### 消费者组管理
-- 创建/更新/删除订阅组
-- 查询消费者连接信息
-- 查询消费统计和进度
-- 重置消费位点
-- 消费者运行时信息
-
-### 生产者管理
-- 查询生产者连接信息
-- 获取所有生产者信息
-
-### 消息操作
-- 消息轨迹查询
-- 消息直接消费
-- 消息重试（半消息恢复）
-
-### ACL 权限管理
-- 用户管理（创建/更新/删除/查询）
-- ACL 规则管理（创建/更新/删除/查询）
-
-### 高级功能
-- ConsumeQueue 查询
-- 过期消息清理
-- 冷数据流控
-- RocksDB 配置导出
-- 定时器引擎切换
-
-## 安装
+## 🛠️ 安装
 
 ```bash
 go get github.com/codermast/rocketmq-admin-go
 ```
 
-## 快速开始
+> 要求 Go 1.21 或更高版本。
+
+---
+
+## 🚀 快速开始
+
+以下示例展示如何连接到 RocketMQ 集群并查询集群信息：
 
 ```go
 package main
@@ -80,118 +65,106 @@ import (
     "context"
     "fmt"
     "log"
+    "time"
 
     admin "github.com/codermast/rocketmq-admin-go"
 )
 
 func main() {
-    // 创建管理客户端
+    // 1. 创建 Admin 客户端
     client, err := admin.NewAdminClient(
-        admin.WithNameServers([]string{"127.0.0.1:9876"}),
+        admin.WithNameServers([]string{"127.0.0.1:9876"}), // NameServer 地址
+        admin.WithTimeout(5 * time.Second),                 // 请求超时时间
     )
     if err != nil {
-        log.Fatalf("创建客户端失败: %v", err)
+        log.Fatalf("初始化失败: %v", err)
     }
     defer client.Close()
 
-    // 查询集群信息
+    // 2. 启动客户端
+    if err := client.Start(); err != nil {
+        log.Fatalf("启动失败: %v", err)
+    }
+
+    // 3. 执行运维操作：查询集群信息
     clusterInfo, err := client.ExamineBrokerClusterInfo(context.Background())
     if err != nil {
-        log.Fatalf("查询集群信息失败: %v", err)
+        log.Fatalf("查询异常: %v", err)
     }
-    fmt.Printf("集群信息: %+v\n", clusterInfo)
 
-    // 获取所有 Topic 列表
-    topicList, err := client.FetchAllTopicList(context.Background())
-    if err != nil {
-        log.Fatalf("获取 Topic 列表失败: %v", err)
+    // 4. 输出结果
+    fmt.Println("🚀 RocketMQ 集群概览:")
+    for clusterName, brokerNames := range clusterInfo.ClusterAddrTable {
+        fmt.Printf("Cluster: %s\n", clusterName)
+        for _, brokerName := range brokerNames {
+            brokerData := clusterInfo.BrokerAddrTable[brokerName]
+            fmt.Printf("  └─ Broker: %s (Master: %s)\n", brokerName, brokerData.BrokerAddrs[0])
+        }
     }
-    fmt.Printf("Topic 数量: %d\n", len(topicList.Topics))
 }
 ```
 
-## 项目结构
+更多示例请参考 [examples](./examples) 目录。
 
-```
-rocketmq-admin-go/
-├── README.md                   # 项目说明文档
-├── LICENSE                     # 开源许可证
-├── go.mod                      # Go 模块定义
-├── go.sum                      # 依赖校验
-├── admin.go                    # 主入口，AdminClient 定义
-├── options.go                  # 客户端配置选项
-├── errors.go                   # 错误定义
-│
-├── protocol/                   # 通信协议层
-│   ├── remoting/               # 远程通信基础设施
-│   │   ├── client.go           # TCP 客户端
-│   │   ├── codec.go            # 协议编解码
-│   │   └── command.go          # 远程命令定义
-│   ├── header/                 # 请求/响应头定义
-│   └── body/                   # 请求/响应体定义
-│
-├── admin/                      # 管理接口实现
-│   ├── cluster.go              # 集群管理
-│   ├── broker.go               # Broker 管理
-│   ├── topic.go                # Topic 管理
-│   ├── consumer.go             # 消费者管理
-│   ├── producer.go             # 生产者管理
-│   ├── message.go              # 消息操作
-│   ├── acl.go                  # ACL 权限管理
-│   └── controller.go           # Controller 管理
-│
-├── model/                      # 数据模型
-│   ├── cluster.go              # 集群相关模型
-│   ├── broker.go               # Broker 相关模型
-│   ├── topic.go                # Topic 相关模型
-│   ├── consumer.go             # 消费者相关模型
-│   ├── message.go              # 消息相关模型
-│   └── acl.go                  # ACL 相关模型
-│
-├── internal/                   # 内部工具包
-│   ├── utils/                  # 通用工具
-│   └── constants/              # 常量定义
-│
-├── examples/                   # 使用示例
-│   ├── cluster/                # 集群管理示例
-│   ├── topic/                  # Topic 管理示例
-│   └── consumer/               # 消费者管理示例
-│
-└── docs/                       # 文档
-    ├── api.md                  # API 文档
-    └── interfaces.md           # 接口对照表
+---
+
+## 🏗️ 架构概览
+
+```mermaid
+graph TD
+    User[用户应用 / 运维平台] -->|API 调用| AdminClient
+    
+    subgraph RocketMQ Admin Go SDK
+        AdminClient[Admin 客户端]
+        Remoting[通信协议层]
+        Codec[序列化/反序列化]
+    end
+
+    AdminClient --> Remoting
+    Remoting --> Codec
+    
+    subgraph RocketMQ Cluster
+        NS[NameServer]
+        BrokerMaster[Broker Master]
+        BrokerSlave[Broker Slave]
+        Controller[Controller (5.x)]
+    end
+
+    Remoting -->|TCP 长连接| NS
+    Remoting -->|TCP 长连接| BrokerMaster
+    Remoting -->|TCP 长连接| Controller
 ```
 
-## 兼容性
+---
 
-- **RocketMQ 版本**: 4.x / 5.x
-- **Go 版本**: 1.21+
+## 🧩 接口能力矩阵
 
-## 开发计划
+本项目将所有运维接口按优先级（P0-P3）进行了完整实现：
 
-详见 [ROADMAP.md](./docs/ROADMAP.md)
+|  优先级  | 涵盖功能                                         | 接口数量 |   状态   |
+| :------: | :----------------------------------------------- | :------: | :------: |
+|  **P0**  | 核心高频接口（Topic/Group/Cluster 基础增删改查） |    16    |    ✅     |
+|  **P1**  | 常用扩展接口（ACL、Broker 配置、生产者管理）     |    38    |    ✅     |
+|  **P2**  | 进阶运维接口（Controller、批量操作、运行时统计） |    38    |    ✅     |
+|  **P3**  | 边缘低频接口（流控、RocksDB 配置、内部调试）     |    9     |    ✅     |
+| **总计** | **全功能集合**                                   | **101**  | **100%** |
 
-## 贡献指南
+---
 
-欢迎提交 Issue 和 Pull Request！
+## 🤝 贡献与支持
+
+欢迎提交 [Issue](https://github.com/codermast/rocketmq-admin-go/issues) 或 [Pull Request](https://github.com/codermast/rocketmq-admin-go/pulls) 改进本项目。
 
 1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m '添加某个特性'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 创建 Pull Request
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 提交 Pull Request
 
-## 许可证
+---
 
-本项目采用 Apache 2.0 许可证 - 详见 [LICENSE](LICENSE) 文件
+## 📄 许可证
 
-## 相关项目
+本项目采用 [Apache-2.0](./LICENSE) 许可证。
 
-- [Apache RocketMQ](https://github.com/apache/rocketmq) - RocketMQ 服务端
-- [rocketmq-client-go](https://github.com/apache/rocketmq-client-go) - 官方 Go 客户端（生产消费）
-- [rocketmq-dashboard](https://github.com/apache/rocketmq-dashboard) - RocketMQ 控制台
-
-## 联系方式
-
-- 作者: CoderMast
-- GitHub: [@codermast](https://github.com/codermast)
+Copyright (c) 2026 CoderMast
