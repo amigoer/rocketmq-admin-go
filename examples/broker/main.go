@@ -40,7 +40,7 @@ func main() {
 	var targetBrokerAddr string
 	for name, brokerData := range clusterInfo.BrokerAddrTable {
 		fmt.Printf("发现 Broker: %s\n", name)
-		if addr, ok := brokerData.BrokerAddrs[0]; ok { // 获取 Master
+		if addr, ok := brokerData.BrokerAddrs["0"]; ok { // 获取 Master
 			targetBrokerAddr = addr
 			break
 		}

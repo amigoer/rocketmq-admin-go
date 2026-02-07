@@ -50,14 +50,23 @@ func (c *Client) GetKVConfig(ctx context.Context, namespace, key string) (string
 		return "", NewAdminError(resp.Code, resp.Remark)
 	}
 
-	var result struct {
-		Value string `json:"value"`
+	// RocketMQ 通过 ExtFields 返回 value
+	if value, ok := resp.ExtFields["value"]; ok && value != "" {
+		return value, nil
 	}
-	if err := json.Unmarshal(resp.Body, &result); err != nil {
+
+	// 如果 ExtFields 没有，尝试从 Body 解析
+	if len(resp.Body) > 0 {
+		var result struct {
+			Value string `json:"value"`
+		}
+		if err := json.Unmarshal(resp.Body, &result); err == nil && result.Value != "" {
+			return result.Value, nil
+		}
 		return string(resp.Body), nil
 	}
 
-	return result.Value, nil
+	return "", nil
 }
 
 // DeleteKVConfig 删除 KV 配置

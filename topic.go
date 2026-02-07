@@ -59,7 +59,7 @@ func (c *Client) DeleteTopic(ctx context.Context, topicName, clusterName string)
 		}
 
 		// 向 Master Broker 发送删除请求
-		if masterAddr, ok := brokerData.BrokerAddrs[0]; ok {
+		if masterAddr, ok := brokerData.BrokerAddrs["0"]; ok {
 			extFields := map[string]string{
 				"topic": topicName,
 			}
@@ -149,8 +149,11 @@ func (c *Client) ExamineTopicRouteInfo(ctx context.Context, topic string) (*Topi
 		return nil, NewAdminError(resp.Code, resp.Remark)
 	}
 
+	// 修复 RocketMQ 返回的非标准 JSON（数字 key 没有引号）
+	fixedBody := fixJSONBody(resp.Body)
+
 	var routeData TopicRouteData
-	if err := json.Unmarshal(resp.Body, &routeData); err != nil {
+	if err := json.Unmarshal(fixedBody, &routeData); err != nil {
 		return nil, fmt.Errorf("解析 Topic 路由失败: %w", err)
 	}
 
@@ -191,8 +194,11 @@ func (c *Client) ExamineTopicStats(ctx context.Context, topic string) (*TopicSta
 		return nil, NewAdminError(resp.Code, resp.Remark)
 	}
 
+	// 修复 RocketMQ 返回的非标准 JSON（数字 key 没有引号）
+	fixedBody := fixJSONBody(resp.Body)
+
 	var statsTable TopicStatsTable
-	if err := json.Unmarshal(resp.Body, &statsTable); err != nil {
+	if err := json.Unmarshal(fixedBody, &statsTable); err != nil {
 		return nil, fmt.Errorf("解析 Topic 统计失败: %w", err)
 	}
 

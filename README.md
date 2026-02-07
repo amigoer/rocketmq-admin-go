@@ -91,7 +91,7 @@ func main() {
         fmt.Printf("Cluster: %s\n", clusterName)
         for _, brokerName := range brokerNames {
             brokerData := clusterInfo.BrokerAddrTable[brokerName]
-            fmt.Printf("  └─ Broker: %s (Master: %s)\n", brokerName, brokerData.BrokerAddrs[0])
+            fmt.Printf("  └─ Broker: %s (Master: %s)\n", brokerName, brokerData.BrokerAddrs["0"])
         }
     }
 }
