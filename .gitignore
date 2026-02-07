@@ -1,0 +1,137 @@
+# =====================
+# Go 语言相关
+# =====================
+# 编译产物
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# 二进制文件
+bin/
+dist/
+build/
+
+# 依赖管理
+vendor/
+
+# Go workspace 文件
+go.work
+go.work.sum
+
+# =====================
+# IDE 和编辑器
+# =====================
+# JetBrains IDEs (GoLand, IntelliJ IDEA)
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Vim
+*.swp
+*.swo
+*.swn
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# =====================
+# 操作系统相关
+# =====================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# =====================
+# 日志和调试
+# =====================
+*.log
+logs/
+*.pid
+*.seed
+
+# =====================
+# 环境和配置
+# =====================
+.env
+.env.local
+.env.*.local
+*.local
+
+# =====================
+# 临时文件
+# =====================
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+
+# =====================
+# 测试覆盖率
+# =====================
+coverage.out
+coverage.html
+*.coverprofile
+coverage/
+
+# =====================
+# 性能分析
+# =====================
+*.prof
+*.pprof
+*.trace
+cpu.out
+mem.out
+
+# =====================
+# 其他
+# =====================
+# 敏感文件
+*.pem
+*.key
+*.crt
+*.p12
+
+# 本地配置示例
+config.local.*
+*.local.yaml
+*.local.json
+*.local.toml
+
+# 生成的文档
+docs/_build/
+
+# debug 二进制
+debug
+__debug_bin*
