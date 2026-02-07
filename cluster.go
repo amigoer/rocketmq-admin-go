@@ -25,8 +25,11 @@ func (c *Client) ExamineBrokerClusterInfo(ctx context.Context) (*ClusterInfo, er
 		return nil, NewAdminError(resp.Code, resp.Remark)
 	}
 
+	// 修复 RocketMQ 返回的非标准 JSON（数字 key 没有引号）
+	fixedBody := fixJSONBody(resp.Body)
+
 	var clusterInfo ClusterInfo
-	if err := json.Unmarshal(resp.Body, &clusterInfo); err != nil {
+	if err := json.Unmarshal(fixedBody, &clusterInfo); err != nil {
 		return nil, fmt.Errorf("解析集群信息失败: %w", err)
 	}
 

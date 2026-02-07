@@ -21,8 +21,8 @@ type BrokerData struct {
 	// BrokerName Broker 名称
 	BrokerName string `json:"brokerName"`
 
-	// BrokerAddrs Broker 地址 key: brokerId, value: address
-	BrokerAddrs map[int64]string `json:"brokerAddrs"`
+	// BrokerAddrs Broker 地址 key: brokerId (字符串形式), value: address
+	BrokerAddrs map[string]string `json:"brokerAddrs"`
 }
 
 // KVTable 键值表

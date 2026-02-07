@@ -253,7 +253,7 @@ func (c *Client) QueryMessage(ctx context.Context, topic, key string, maxNum int
 	var allMessages []*MessageExt
 	for _, brokerData := range routeData.BrokerDatas {
 		// 仅查询 Master
-		brokerAddr := brokerData.BrokerAddrs[0]
+		brokerAddr := brokerData.BrokerAddrs["0"]
 		if brokerAddr == "" {
 			continue
 		}
