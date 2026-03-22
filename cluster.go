@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/codermast/rocketmq-admin-go/protocol/remoting"
+	"github.com/amigoer/rocketmq-admin-go/protocol/remoting"
 )
 
 // =============================================================================

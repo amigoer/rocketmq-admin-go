@@ -10,7 +10,7 @@ import (
 	"log"
 	"time"
 
-	admin "github.com/codermast/rocketmq-admin-go"
+	admin "github.com/amigoer/rocketmq-admin-go"
 )
 
 func main() {

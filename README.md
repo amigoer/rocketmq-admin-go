@@ -5,11 +5,11 @@
   <p>全功能复刻 Java 版 <code>MQAdminExt</code> 能力，与官方 <code>rocketmq-client-go</code> 无缝集成。</p>
 
   <p>
-    <a href="https://pkg.go.dev/github.com/codermast/rocketmq-admin-go">
-      <img src="https://pkg.go.dev/badge/github.com/codermast/rocketmq-admin-go.svg" alt="Go Reference">
+    <a href="https://pkg.go.dev/github.com/amigoer/rocketmq-admin-go">
+      <img src="https://pkg.go.dev/badge/github.com/amigoer/rocketmq-admin-go.svg" alt="Go Reference">
     </a>
-    <a href="https://goreportcard.com/report/github.com/codermast/rocketmq-admin-go">
-      <img src="https://goreportcard.com/badge/github.com/codermast/rocketmq-admin-go" alt="Go Report Card">
+    <a href="https://goreportcard.com/report/github.com/amigoer/rocketmq-admin-go">
+      <img src="https://goreportcard.com/badge/github.com/amigoer/rocketmq-admin-go" alt="Go Report Card">
     </a>
     <a href="LICENSE">
       <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License">
@@ -41,7 +41,7 @@
 ## 🛠️ 安装
 
 ```bash
-go get github.com/codermast/rocketmq-admin-go
+go get github.com/amigoer/rocketmq-admin-go@latest
 ```
 
 > 要求 Go 1.21 或更高版本。
@@ -61,7 +61,7 @@ import (
     "context"
     "fmt"
     
-    admin "github.com/codermast/rocketmq-admin-go"
+    admin "github.com/amigoer/rocketmq-admin-go"
     "github.com/apache/rocketmq-client-go/v2/primitive"
     "github.com/apache/rocketmq-client-go/v2/producer"
 )
@@ -106,7 +106,7 @@ import (
     "log"
     "time"
 
-    admin "github.com/codermast/rocketmq-admin-go"
+    admin "github.com/amigoer/rocketmq-admin-go"
 )
 
 func main() {
@@ -222,7 +222,7 @@ graph TD
 
 ## 🤝 贡献与支持
 
-欢迎提交 [Issue](https://github.com/codermast/rocketmq-admin-go/issues) 或 [Pull Request](https://github.com/codermast/rocketmq-admin-go/pulls) 改进本项目。
+欢迎提交 [Issue](https://github.com/amigoer/rocketmq-admin-go/issues) 或 [Pull Request](https://github.com/amigoer/rocketmq-admin-go/pulls) 改进本项目。
 
 1. Fork 本仓库
 2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
@@ -236,4 +236,4 @@ graph TD
 
 本项目采用 [Apache-2.0](./LICENSE) 许可证。
 
-Copyright (c) 2026 CoderMast
+Copyright (c) 2026 Amigoer
