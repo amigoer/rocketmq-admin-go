@@ -170,6 +170,9 @@ const (
 
 	// ========== 消息相关 ==========
 
+	// PullMessage 拉取消息
+	PullMessage = 11
+
 	// QueryMessage 查询消息
 	QueryMessage = 12
 
