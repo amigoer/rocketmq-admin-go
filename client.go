@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/codermast/rocketmq-admin-go/protocol/remoting"
+	"github.com/amigoer/rocketmq-admin-go/protocol/remoting"
 )
 
 // Client 是 RocketMQ 运维管理客户端

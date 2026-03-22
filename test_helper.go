@@ -14,8 +14,6 @@ import (
 const (
 	// 默认 NameServer 地址
 	testNameServerAddr = "localhost:9876"
-	// 默认 Broker 地址
-	testBrokerAddr = "localhost:10911"
 	// 测试超时时间
 	testTimeout = 10 * time.Second
 	// 测试 Topic 前缀
@@ -35,15 +33,6 @@ func getTestNameServer() string {
 		return addr
 	}
 	return testNameServerAddr
-}
-
-// getTestBrokerAddr 获取测试用 Broker 地址
-// 优先使用环境变量 ROCKETMQ_BROKER_ADDR
-func getTestBrokerAddr() string {
-	if addr := os.Getenv("ROCKETMQ_BROKER_ADDR"); addr != "" {
-		return addr
-	}
-	return testBrokerAddr
 }
 
 // getTestClient 创建测试客户端

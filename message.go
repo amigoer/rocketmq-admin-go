@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/apache/rocketmq-client-go/v2/primitive"
-	"github.com/codermast/rocketmq-admin-go/protocol/remoting"
+	"github.com/amigoer/rocketmq-admin-go/protocol/remoting"
 )
 
 // =============================================================================
