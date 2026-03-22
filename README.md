@@ -145,6 +145,176 @@ func main() {
 
 
 
+## 📝 更多使用示例
+
+### Topic 管理
+
+```go
+ctx := context.Background()
+
+// 创建 Topic
+topicConfig := admin.TopicConfig{
+    TopicName:      "TestTopic",
+    ReadQueueNums:  8,
+    WriteQueueNums: 8,
+    Perm:           6, // 读写权限
+}
+client.CreateTopic(ctx, "127.0.0.1:10911", topicConfig)
+
+// 查询 Topic 路由信息
+routeData, _ := client.ExamineTopicRouteInfo(ctx, "TestTopic")
+fmt.Printf("Broker 数量: %d, 队列数量: %d\n", len(routeData.BrokerDatas), len(routeData.QueueDatas))
+
+// 查询 Topic 统计
+stats, _ := client.ExamineTopicStats(ctx, "TestTopic")
+fmt.Printf("消息队列数量: %d\n", len(stats.OffsetTable))
+
+// 删除 Topic
+client.DeleteTopic(ctx, "TestTopic", "DefaultCluster")
+```
+
+### Broker 运维
+
+```go
+// 获取集群信息，找到 Broker Master 地址
+clusterInfo, _ := client.ExamineBrokerClusterInfo(ctx)
+
+for name, brokerData := range clusterInfo.BrokerAddrTable {
+    brokerAddr := brokerData.BrokerAddrs["0"] // Master
+    fmt.Printf("Broker: %s (%s)\n", name, brokerAddr)
+
+    // 获取 Broker 运行时统计
+    kvTable, _ := client.FetchBrokerRuntimeStats(ctx, brokerAddr)
+    fmt.Printf("版本: %s\n", kvTable.Table["brokerVersionDesc"])
+
+    // 获取 Broker 配置
+    config, _ := client.GetBrokerConfig(ctx, brokerAddr)
+    fmt.Printf("brokerName: %s, brokerId: %s\n", config["brokerName"], config["brokerId"])
+}
+```
+
+### 消费者管理
+
+```go
+// 创建订阅组
+groupConfig := admin.SubscriptionGroupConfig{
+    GroupName:      "TestConsumerGroup",
+    ConsumeEnable:  true,
+    RetryQueueNums: 1,
+    RetryMaxTimes:  16,
+}
+client.CreateSubscriptionGroup(ctx, "127.0.0.1:10911", groupConfig)
+
+// 查询消费统计
+consumeStats, _ := client.ExamineConsumeStats(ctx, "TestConsumerGroup")
+fmt.Printf("消费 TPS: %.2f, 队列数量: %d\n", consumeStats.ConsumeTps, len(consumeStats.OffsetTable))
+
+// 查询消费者连接
+connInfo, _ := client.ExamineConsumerConnectionInfo(ctx, "TestConsumerGroup")
+fmt.Printf("连接数: %d, 消费类型: %s\n", len(connInfo.ConnectionSet), connInfo.ConsumeType)
+
+// 重置消费位点（重置到 1 小时前）
+timestamp := (time.Now().Unix() - 3600) * 1000
+offsets, _ := client.ResetOffsetByTimestamp(ctx, "TestTopic", "TestConsumerGroup", timestamp, false)
+fmt.Printf("重置队列数: %d\n", len(offsets))
+```
+
+### 消息查询
+
+```go
+topic := "TestTopic"
+
+// 按 Key 查询消息
+beginTime := time.Now().Add(-24 * time.Hour).UnixMilli()
+endTime := time.Now().UnixMilli()
+msgs, _ := client.QueryMessage(ctx, topic, "Order-1001", 32, beginTime, endTime)
+fmt.Printf("找到消息数: %d\n", len(msgs))
+
+// 按 ID 查看消息详情
+msg, _ := client.ViewMessage(ctx, topic, msgs[0].MsgId)
+fmt.Printf("Topic: %s, QueueId: %d, BornHost: %s\n", msg.Topic, msg.QueueId, msg.BornHost)
+
+// 查询消费队列
+qData, _ := client.QueryConsumeQueue(ctx, "127.0.0.1:10911", topic, 0, 0, 10, "DefaultGroup")
+fmt.Printf("获取条目数: %d\n", len(qData))
+```
+
+### ACL 权限管理
+
+```go
+brokerAddr := "127.0.0.1:10911"
+
+// 创建用户
+user := admin.UserInfo{
+    Username:   "test_user",
+    Password:   "12345678",
+    UserType:   "NORMAL",
+    UserStatus: "OPEN",
+}
+client.UpdateUser(ctx, brokerAddr, user)
+
+// 配置 ACL 权限
+acl := admin.AclInfo{
+    Subject: "test_user",
+    Policies: []admin.AclPolicy{
+        {
+            Resource: "TestTopic",
+            Actions:  []string{"PUB", "SUB"},
+            Effect:   "ALLOW",
+            Decision: "ALLOW",
+        },
+    },
+}
+client.UpdateAcl(ctx, brokerAddr, acl)
+
+// 列出 ACL 规则
+acls, _ := client.ListAcl(ctx, brokerAddr)
+for _, a := range acls.Acls {
+    fmt.Printf("主体: %s, 策略数: %d\n", a.Subject, len(a.Policies))
+}
+```
+
+
+
+## 📊 接口覆盖统计
+
+本项目全面复刻 Java 版 `MQAdminExt` 的 **112 个接口**：
+
+| 分类            | 接口数量 | 核心 (P0) | 常用 (P1) | 进阶 (P2) | 高级 (P3) |
+| --------------- | :------: | :-------: | :-------: | :-------: | :-------: |
+| 生命周期管理    |    2     |     2     |     0     |     0     |     0     |
+| Broker 管理     |    12    |     1     |     5     |     6     |     0     |
+| Topic 管理      |    20    |     5     |     9     |     6     |     0     |
+| 消费者组管理    |    22    |     5     |     7     |    10     |     0     |
+| 生产者管理      |    2     |     0     |     2     |     0     |     0     |
+| 集群管理        |    5     |     2     |     2     |     1     |     0     |
+| 消息操作        |    6     |     0     |     2     |     4     |     0     |
+| Offset 管理     |    7     |     1     |     4     |     1     |     1     |
+| KV 配置管理     |    6     |     0     |     0     |     6     |     0     |
+| ACL 权限管理    |    10    |     0     |    10     |     0     |     0     |
+| Controller 管理 |    5     |     0     |     0     |     5     |     0     |
+| 高级功能        |    15    |     0     |     0     |     7     |     8     |
+| **总计**        | **112**  |  **16**   |  **41**   |  **46**   |   **9**   |
+
+> 完整接口对照表请参考 [docs/interfaces.md](./docs/interfaces.md)。
+
+
+
+## 🔧 协议实现
+
+本项目**完全使用 Go 标准库** (`net` + `encoding/binary` + `encoding/json`) 原生实现了 RocketMQ Remoting 协议，零第三方网络库依赖：
+
+```text
++----------------+----------------+---------------------+----------------+
+|  Total Length   |  Header Length |    Header Data      |      Body      |
+|    (4 Bytes)   |    (4 Bytes)   |  (JSON Serialized)  |  (Byte Array)  |
++----------------+----------------+---------------------+----------------+
+```
+
+> 详细协议解析请参考 [docs/rocketmq_protocol.md](./docs/rocketmq_protocol.md)。
+
+
+
 ## 🔌 与 rocketmq-client-go 集成
 
 本项目设计为 `rocketmq-client-go` 的**增强包**，通过统一配置工厂实现配置共享：
