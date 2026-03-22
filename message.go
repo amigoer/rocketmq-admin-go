@@ -4,7 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strconv"
+	"sync"
 
+	"github.com/apache/rocketmq-client-go/v2/primitive"
 	"github.com/codermast/rocketmq-admin-go/protocol/remoting"
 )
 
@@ -207,11 +211,10 @@ func (c *Client) ExportPopRecords(ctx context.Context, brokerAddr, topic, consum
 }
 
 // =============================================================================
-// 搜索偏移（已废弃）
+// 搜索偏移
 // =============================================================================
 
-// SearchOffset 搜索偏移（已废弃）
-// Deprecated: 此方法已废弃，建议直接使用时间戳查询
+// SearchOffset 根据时间戳搜索指定队列的偏移量
 func (c *Client) SearchOffset(ctx context.Context, brokerAddr, topic string, queueId int, timestamp int64) (int64, error) {
 	extFields := map[string]string{
 		"topic":     topic,
@@ -229,14 +232,241 @@ func (c *Client) SearchOffset(ctx context.Context, brokerAddr, topic string, que
 		return 0, NewAdminError(resp.Code, resp.Remark)
 	}
 
-	var result struct {
-		Offset int64 `json:"offset"`
-	}
-	if err := json.Unmarshal(resp.Body, &result); err != nil {
-		return 0, fmt.Errorf("解析偏移结果失败: %w", err)
+	// RocketMQ 的 SearchOffset 响应将 offset 放在 ExtFields 中
+	offsetStr, ok := resp.ExtFields["offset"]
+	if ok && offsetStr != "" {
+		offset, parseErr := strconv.ParseInt(offsetStr, 10, 64)
+		if parseErr == nil {
+			return offset, nil
+		}
 	}
 
-	return result.Offset, nil
+	// 兼容：尝试从 Body JSON 解析
+	if len(resp.Body) > 0 {
+		var result struct {
+			Offset int64 `json:"offset"`
+		}
+		if err := json.Unmarshal(resp.Body, &result); err == nil {
+			return result.Offset, nil
+		}
+	}
+
+	return 0, fmt.Errorf("解析偏移结果失败: 响应中未包含 offset 字段")
+}
+
+// =============================================================================
+// 按偏移量拉取消息
+// =============================================================================
+
+// PullMessageResult 拉取消息结果
+type PullMessageResult struct {
+	Messages       []*MessageExt // 消息列表
+	NextBeginOffset int64        // 下次拉取起始偏移量
+	MinOffset      int64         // 队列最小偏移量
+	MaxOffset      int64         // 队列最大偏移量
+}
+
+// PullMessage 从指定 Broker 的指定队列、指定偏移量拉取消息
+func (c *Client) PullMessage(ctx context.Context, brokerAddr, topic string, queueId int, offset int64, maxMsgNums int) (*PullMessageResult, error) {
+	// sysFlag = 6: bit1(suspend=true) | bit2(subscription=true)
+	extFields := map[string]string{
+		"consumerGroup":        "TOOLS_CONSUMER",
+		"topic":                topic,
+		"queueId":              fmt.Sprintf("%d", queueId),
+		"queueOffset":          fmt.Sprintf("%d", offset),
+		"maxMsgNums":           fmt.Sprintf("%d", maxMsgNums),
+		"sysFlag":              "6",
+		"subExpression":        "*",
+		"expressionType":       "TAG",
+		"subVersion":           "0",
+		"commitOffset":         "0",
+		"suspendTimeoutMillis": "0",
+	}
+	cmd := remoting.NewRequest(remoting.PullMessage, extFields)
+
+	resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &PullMessageResult{}
+
+	// 解析 ExtFields 中的偏移量信息
+	if v, ok := resp.ExtFields["nextBeginOffset"]; ok {
+		result.NextBeginOffset, _ = strconv.ParseInt(v, 10, 64)
+	}
+	if v, ok := resp.ExtFields["minOffset"]; ok {
+		result.MinOffset, _ = strconv.ParseInt(v, 10, 64)
+	}
+	if v, ok := resp.ExtFields["maxOffset"]; ok {
+		result.MaxOffset, _ = strconv.ParseInt(v, 10, 64)
+	}
+
+	// resp.Code == 0(FOUND) 表示找到消息，Body 中包含二进制编码的消息数据
+	if resp.Code == remoting.Success && len(resp.Body) > 0 {
+		// 使用 rocketmq-client-go 的 DecodeMessage 解码二进制消息
+		decodedMsgs := primitive.DecodeMessage(resp.Body)
+		for _, pm := range decodedMsgs {
+			msg := &MessageExt{
+				Topic:          pm.Topic,
+				QueueId:        pm.Queue.QueueId,
+				QueueOffset:    pm.QueueOffset,
+				MsgId:          pm.MsgId,
+				OffsetMsgId:    pm.OffsetMsgId,
+				Body:           pm.Body,
+				Flag:           int(pm.Flag),
+				BornTimestamp:  pm.BornTimestamp,
+				StoreTimestamp: pm.StoreTimestamp,
+				BornHost:       pm.BornHost,
+				StoreHost:      pm.StoreHost,
+				SysFlag:        int(pm.SysFlag),
+				Properties:     pm.GetProperties(),
+			}
+			result.Messages = append(result.Messages, msg)
+		}
+	}
+	// resp.Code == 1(NO_NEW_MSG) 或其他码表示没有更多消息，返回空列表即可
+
+	return result, nil
+}
+
+// =============================================================================
+// 按时间范围浏览消息
+// =============================================================================
+
+// QueryMessageByTime 按时间范围浏览消息
+// beginTime/endTime 为 Unix 毫秒时间戳，maxNum 为最大返回数量
+func (c *Client) QueryMessageByTime(ctx context.Context, topic string, beginTime, endTime int64, maxNum int) ([]*MessageExt, error) {
+	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
+	if err != nil {
+		return nil, fmt.Errorf("获取 Topic 路由信息失败: %w", err)
+	}
+
+	if maxNum <= 0 {
+		maxNum = 32
+	}
+
+	// 收集所有 (brokerAddr, queueId) 对
+	type queueInfo struct {
+		brokerAddr string
+		queueId    int
+	}
+	var queues []queueInfo
+
+	for _, qd := range routeData.QueueDatas {
+		// 找到该 Broker 的 Master 地址
+		var brokerAddr string
+		for _, bd := range routeData.BrokerDatas {
+			if bd.BrokerName == qd.BrokerName {
+				brokerAddr = bd.BrokerAddrs["0"] // Master
+				break
+			}
+		}
+		if brokerAddr == "" {
+			continue
+		}
+
+		for i := 0; i < qd.ReadQueueNums; i++ {
+			queues = append(queues, queueInfo{brokerAddr: brokerAddr, queueId: i})
+		}
+	}
+
+	if len(queues) == 0 {
+		return nil, fmt.Errorf("未找到可用的消息队列")
+	}
+
+	// 并发查询每个队列
+	type queueResult struct {
+		msgs []*MessageExt
+		err  error
+	}
+	results := make([]queueResult, len(queues))
+	var wg sync.WaitGroup
+
+	perQueueLimit := maxNum/len(queues) + 1
+	if perQueueLimit < 4 {
+		perQueueLimit = 4
+	}
+
+	for i, q := range queues {
+		wg.Add(1)
+		go func(idx int, qi queueInfo) {
+			defer wg.Done()
+
+			// 1. 根据 beginTime 定位起始偏移量
+			startOffset, err := c.SearchOffset(ctx, qi.brokerAddr, topic, qi.queueId, beginTime)
+			if err != nil {
+				results[idx] = queueResult{err: err}
+				return
+			}
+
+			// 2. 从起始偏移量拉取消息
+			var collected []*MessageExt
+			currentOffset := startOffset
+
+			for len(collected) < perQueueLimit {
+				batchSize := perQueueLimit - len(collected)
+				if batchSize > 32 {
+					batchSize = 32
+				}
+
+				pullResult, pullErr := c.PullMessage(ctx, qi.brokerAddr, topic, qi.queueId, currentOffset, batchSize)
+				if pullErr != nil {
+					// 拉取失败不阻塞整体，返回已收集的消息
+					break
+				}
+
+				if len(pullResult.Messages) == 0 {
+					break
+				}
+
+				reachedEnd := false
+				for _, msg := range pullResult.Messages {
+					// 过滤超出 endTime 的消息
+					if endTime > 0 && msg.StoreTimestamp > endTime {
+						reachedEnd = true
+						break
+					}
+					collected = append(collected, msg)
+				}
+
+				if reachedEnd {
+					break
+				}
+
+				// 更新偏移量继续拉取
+				if pullResult.NextBeginOffset <= currentOffset {
+					break // 防止死循环
+				}
+				currentOffset = pullResult.NextBeginOffset
+			}
+
+			results[idx] = queueResult{msgs: collected}
+		}(i, q)
+	}
+
+	wg.Wait()
+
+	// 汇总所有队列的消息
+	var allMessages []*MessageExt
+	for _, r := range results {
+		if r.err != nil {
+			continue // 跳过失败的队列
+		}
+		allMessages = append(allMessages, r.msgs...)
+	}
+
+	// 按存储时间排序
+	sort.Slice(allMessages, func(i, j int) bool {
+		return allMessages[i].StoreTimestamp < allMessages[j].StoreTimestamp
+	})
+
+	// 截断到 maxNum
+	if len(allMessages) > maxNum {
+		allMessages = allMessages[:maxNum]
+	}
+
+	return allMessages, nil
 }
 
 // =============================================================================
@@ -276,9 +506,27 @@ func (c *Client) QueryMessage(ctx context.Context, topic, key string, maxNum int
 			continue
 		}
 
-		var msgs []*MessageExt
-		if err := json.Unmarshal(resp.Body, &msgs); err == nil {
-			allMessages = append(allMessages, msgs...)
+		// QueryMessage 的响应体也是二进制编码的消息，使用 DecodeMessage 解码
+		if len(resp.Body) > 0 {
+			decodedMsgs := primitive.DecodeMessage(resp.Body)
+			for _, pm := range decodedMsgs {
+				msg := &MessageExt{
+					Topic:          pm.Topic,
+					QueueId:        pm.Queue.QueueId,
+					QueueOffset:    pm.QueueOffset,
+					MsgId:          pm.MsgId,
+					OffsetMsgId:    pm.OffsetMsgId,
+					Body:           pm.Body,
+					Flag:           int(pm.Flag),
+					BornTimestamp:  pm.BornTimestamp,
+					StoreTimestamp: pm.StoreTimestamp,
+					BornHost:       pm.BornHost,
+					StoreHost:      pm.StoreHost,
+					SysFlag:        int(pm.SysFlag),
+					Properties:     pm.GetProperties(),
+				}
+				allMessages = append(allMessages, msg)
+			}
 		}
 	}
 
