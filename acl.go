@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/amigoer/rocketmq-admin-go/protocol/remoting"
 )
@@ -230,4 +231,128 @@ func (c *Client) ListAcl(ctx context.Context, brokerAddr string) (*AclList, erro
 	}
 
 	return &acls, nil
+}
+
+// =============================================================================
+// 旧版 ACL 配置管理接口（RocketMQ 4.x，基于 plain_acl.yml）
+// =============================================================================
+
+// UpdatePlainAccessConfig 创建或更新一条旧版 access config（按 accessKey 匹配）
+// 对应 Java RequestCode.UPDATE_AND_CREATE_ACL_CONFIG = 50
+// 参数通过 ExtFields（请求头）传递，topicPerms/groupPerms 用逗号拼接
+func (c *Client) UpdatePlainAccessConfig(ctx context.Context, brokerAddr string, config PlainAccessConfig) error {
+	extFields := map[string]string{
+		"accessKey": config.AccessKey,
+	}
+	if config.SecretKey != "" {
+		extFields["secretKey"] = config.SecretKey
+	}
+	if config.WhiteRemoteAddress != "" {
+		extFields["whiteRemoteAddress"] = config.WhiteRemoteAddress
+	}
+	if config.Admin {
+		extFields["admin"] = "true"
+	} else {
+		extFields["admin"] = "false"
+	}
+	if config.DefaultTopicPerm != "" {
+		extFields["defaultTopicPerm"] = config.DefaultTopicPerm
+	}
+	if config.DefaultGroupPerm != "" {
+		extFields["defaultGroupPerm"] = config.DefaultGroupPerm
+	}
+	if len(config.TopicPerms) > 0 {
+		extFields["topicPerms"] = strings.Join(config.TopicPerms, ",")
+	}
+	if len(config.GroupPerms) > 0 {
+		extFields["groupPerms"] = strings.Join(config.GroupPerms, ",")
+	}
+
+	cmd := remoting.NewRequest(remoting.UpdateAndCreateAclConfig, extFields)
+
+	resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != remoting.Success {
+		return NewAdminError(resp.Code, resp.Remark)
+	}
+
+	return nil
+}
+
+// DeletePlainAccessConfig 按 accessKey 删除一条旧版 access config
+// 对应 Java RequestCode.DELETE_ACL_CONFIG = 51
+func (c *Client) DeletePlainAccessConfig(ctx context.Context, brokerAddr, accessKey string) error {
+	extFields := map[string]string{
+		"accessKey": accessKey,
+	}
+	cmd := remoting.NewRequest(remoting.DeleteAclConfig, extFields)
+
+	resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != remoting.Success {
+		return NewAdminError(resp.Code, resp.Remark)
+	}
+
+	return nil
+}
+
+// GetBrokerClusterAclInfo 获取 Broker 集群 ACL 版本信息
+// 对应 Java RequestCode.GET_BROKER_CLUSTER_ACL_INFO = 52
+// 版本信息在 response 的 ExtFields 中返回
+func (c *Client) GetBrokerClusterAclInfo(ctx context.Context, brokerAddr string) (*BrokerClusterAclVersionInfo, error) {
+	cmd := remoting.NewRequest(remoting.GetBrokerClusterAclInfo, nil)
+
+	resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != remoting.Success {
+		return nil, NewAdminError(resp.Code, resp.Remark)
+	}
+
+	info := &BrokerClusterAclVersionInfo{
+		BrokerAddr:  resp.ExtFields["brokerAddr"],
+		BrokerName:  resp.ExtFields["brokerName"],
+		ClusterName: resp.ExtFields["clusterName"],
+		Version:     resp.ExtFields["version"],
+	}
+	if allVersions, ok := resp.ExtFields["allAclFileVersion"]; ok {
+		var versions map[string]string
+		if err := json.Unmarshal([]byte(allVersions), &versions); err == nil {
+			info.AllAclFileVersion = versions
+		}
+	}
+
+	return info, nil
+}
+
+// UpdateGlobalWhiteAddrsConfig 更新全局白名单地址
+// 对应 Java RequestCode.UPDATE_GLOBAL_WHITE_ADDRS_CONFIG = 53
+func (c *Client) UpdateGlobalWhiteAddrsConfig(ctx context.Context, brokerAddr string, globalWhiteAddrs []string, aclFilePath string) error {
+	extFields := map[string]string{
+		"globalWhiteAddrs": strings.Join(globalWhiteAddrs, ","),
+	}
+	if aclFilePath != "" {
+		extFields["aclFilePath"] = aclFilePath
+	}
+
+	cmd := remoting.NewRequest(remoting.UpdateGlobalWhiteAddrsConfig, extFields)
+
+	resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != remoting.Success {
+		return NewAdminError(resp.Code, resp.Remark)
+	}
+
+	return nil
 }

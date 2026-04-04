@@ -399,8 +399,3 @@ func TestIntegration_CheckRocksdbCqWriteProgress(t *testing.T) {
 	}
 }
 
-// TestIntegration_SwitchTimerEngine 测试切换定时器引擎
-func TestIntegration_SwitchTimerEngine(t *testing.T) {
-	skipIfNoRocketMQ(t)
-	t.Skip("跳过 SwitchTimerEngine 测试：此操作会影响 Broker 运行")
-}

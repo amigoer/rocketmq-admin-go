@@ -1,17 +1,25 @@
 // Package remoting RocketMQ 请求码定义
+// 对照 Java 源码 RequestCode.java (master branch + 4.9.8 branch)
 package remoting
 
-// 请求码定义（对应 Java RequestCode）
+// 请求码定义
 const (
-	// ========== NameServer 相关 ==========
+	// ========== 消息基础操作 ==========
 
-	// GetRouteInfoByTopic 获取 Topic 路由信息
-	GetRouteInfoByTopic = 105
+	// PullMessage 拉取消息
+	PullMessage = 11
 
-	// GetBrokerClusterInfo 获取集群信息
-	GetBrokerClusterInfo = 106
+	// QueryMessage 查询消息
+	QueryMessage = 12
 
-	// ========== Broker 相关 ==========
+	// UpdateConsumerOffset 更新消费 Offset (Java: UPDATE_CONSUMER_OFFSET)
+	UpdateConsumerOffset = 15
+
+	// UpdateAndCreateTopic 创建或更新 Topic
+	UpdateAndCreateTopic = 17
+
+	// GetAllTopicConfig 获取所有 Topic 配置
+	GetAllTopicConfig = 21
 
 	// UpdateBrokerConfig 更新 Broker 配置
 	UpdateBrokerConfig = 25
@@ -22,56 +30,6 @@ const (
 	// GetBrokerRuntimeInfo 获取 Broker 运行时信息
 	GetBrokerRuntimeInfo = 28
 
-	// ========== Topic 相关 ==========
-
-	// UpdateAndCreateTopic 创建或更新 Topic
-	UpdateAndCreateTopic = 17
-
-	// DeleteTopicInBroker 在 Broker 中删除 Topic
-	DeleteTopicInBroker = 215
-
-	// DeleteTopicInNamesrv 在 NameServer 中删除 Topic
-	DeleteTopicInNamesrv = 216
-
-	// GetAllTopicListFromNamesrv 从 NameServer 获取所有 Topic 列表
-	GetAllTopicListFromNamesrv = 206
-
-	// GetTopicStatsInfo 获取 Topic 统计信息
-	GetTopicStatsInfo = 202
-
-	// GetTopicsByCluster 按集群获取 Topic 列表
-	GetTopicsByCluster = 224
-
-	// ========== 消费者相关 ==========
-
-	// UpdateAndCreateSubscriptionGroup 创建或更新订阅组
-	UpdateAndCreateSubscriptionGroup = 200
-
-	// DeleteSubscriptionGroup 删除订阅组
-	DeleteSubscriptionGroup = 207
-
-	// GetAllSubscriptionGroupConfig 获取所有订阅组配置
-	GetAllSubscriptionGroupConfig = 201
-
-	// GetSubscriptionGroupConfig 获取订阅组配置
-	GetSubscriptionGroupConfig = 209
-
-	// GetConsumeStats 获取消费统计
-	GetConsumeStats = 208
-
-	// GetConsumerConnectionList 获取消费者连接列表
-	GetConsumerConnectionList = 203
-
-	// GetConsumerRunningInfo 获取消费者运行时信息
-	GetConsumerRunningInfo = 307
-
-	// ========== 生产者相关 ==========
-
-	// GetProducerConnectionList 获取生产者连接列表
-	GetProducerConnectionList = 204
-
-	// ========== Offset 相关 ==========
-
 	// SearchOffsetByTimestamp 按时间戳搜索 Offset
 	SearchOffsetByTimestamp = 29
 
@@ -81,142 +39,22 @@ const (
 	// GetMinOffset 获取最小 Offset
 	GetMinOffset = 31
 
-	// ResetConsumerOffset 重置消费者 Offset
-	ResetConsumerOffset = 220
-
-	// ========== ACL 相关 ==========
-
-	// UpdateAclConfig 更新 ACL 配置
-	UpdateAclConfig = 328
-
-	// DeleteAclConfig 删除 ACL 配置
-	DeleteAclConfig = 329
-
-	// GetBrokerAclConfig 获取 Broker ACL 配置
-	GetBrokerAclConfig = 330
-
-	// GetBrokerAclConfigVersion Broker ACL 配置版本
-	GetBrokerAclConfigVersion = 331
-
-	// ========== NameServer 配置相关 ==========
-
-	// UpdateNamesrvConfig 更新 NameServer 配置
-	UpdateNamesrvConfig = 318
-
-	// GetNamesrvConfig 获取 NameServer 配置
-	GetNamesrvConfig = 319
-
-	// ========== ACL 用户管理相关 ==========
-
-	// CreateUser 创建用户
-	CreateUser = 356
-
-	// UpdateUser 更新用户
-	UpdateUser = 357
-
-	// DeleteUser 删除用户
-	DeleteUser = 358
-
-	// GetUser 获取用户
-	GetUser = 359
-
-	// ListUser 列出用户
-	ListUser = 360
-
-	// CreateAcl 创建 ACL
-	CreateAcl = 361
-
-	// UpdateAcl 更新 ACL
-	UpdateAcl = 362
-
-	// DeleteAcl 删除 ACL
-	DeleteAcl = 363
-
-	// GetAcl 获取 ACL
-	GetAcl = 364
-
-	// ListAcl 列出 ACL
-	ListAcl = 365
-
-	// ========== 更多 Topic 相关 ==========
-
-	// GetAllTopicConfig 获取所有 Topic 配置
-	GetAllTopicConfig = 21
-
-	// QueryTopicConsumeByWho 查询 Topic 被谁消费
-	QueryTopicConsumeByWho = 300
-
-	// ========== 更多消费者相关 ==========
-
-	// QueryTopicsByConsumer 查询消费者订阅的 Topic
-	QueryTopicsByConsumer = 343
-
-	// QuerySubscription 查询订阅信息
-	QuerySubscription = 344
-
-	// QueryConsumeTimeSpan 查询消费时间跨度
-	QueryConsumeTimeSpan = 302
-
-	// GetConsumeStatus 获取消费状态
-	GetConsumeStatus = 304
-
-	// GetAllSubscriptionGroup 获取所有订阅组
-	GetAllSubscriptionGroup = 201
-
-	// ========== 生产者相关 ==========
-
-	// GetProducerInfo 获取生产者信息
-	GetProducerInfo = 305
-
-	// ========== 消息相关 ==========
-
-	// PullMessage 拉取消息
-	PullMessage = 11
-
-	// QueryMessage 查询消息
-	QueryMessage = 12
-
 	// ViewMessageById 按 ID 查看消息
 	ViewMessageById = 33
 
-	// ========== Offset 扩展 ==========
+	// ========== 旧版 ACL 相关（RocketMQ 4.x plain_acl.yml）==========
 
-	// UpdateConsumeOffset 更新消费 Offset
-	UpdateConsumeOffset = 221
+	// UpdateAndCreateAclConfig 创建或更新旧版 ACL 配置 (Java: UPDATE_AND_CREATE_ACL_CONFIG)
+	UpdateAndCreateAclConfig = 50
 
-	// ResetOffsetByQueueId 按队列 ID 重置 Offset
-	ResetOffsetByQueueId = 222
+	// DeleteAclConfig 删除旧版 ACL 配置 (Java: DELETE_ACL_CONFIG)
+	DeleteAclConfig = 51
 
-	// ========== Broker 扩展 ==========
+	// GetBrokerClusterAclInfo 获取 Broker 集群 ACL 信息 (Java: GET_BROKER_CLUSTER_ACL_INFO)
+	GetBrokerClusterAclInfo = 52
 
-	// WipeWritePermOfBroker 清除 Broker 写权限
-	WipeWritePermOfBroker = 41
-
-	// AddWritePermOfBroker 添加 Broker 写权限
-	AddWritePermOfBroker = 42
-
-	// ViewBrokerStatsData 查看 Broker 统计数据
-	ViewBrokerStatsData = 210
-
-	// GetBrokerHAStatus 获取 Broker HA 状态
-	GetBrokerHAStatus = 339
-
-	// ========== Controller 相关 (RocketMQ 5.x) ==========
-
-	// ControllerGetMetadataInfo Controller 获取元数据
-	ControllerGetMetadataInfo = 501
-
-	// ControllerElectMaster Controller 选举 Master
-	ControllerElectMaster = 503
-
-	// ControllerGetConfig 获取 Controller 配置
-	ControllerGetConfig = 504
-
-	// ControllerUpdateConfig 更新 Controller 配置
-	ControllerUpdateConfig = 505
-
-	// CleanControllerBrokerData 清理 Controller Broker 数据
-	CleanControllerBrokerData = 506
+	// UpdateGlobalWhiteAddrsConfig 更新全局白名单地址 (Java: UPDATE_GLOBAL_WHITE_ADDRS_CONFIG)
+	UpdateGlobalWhiteAddrsConfig = 53
 
 	// ========== KV 配置管理 ==========
 
@@ -229,83 +67,232 @@ const (
 	// DeleteKVConfig 删除 KV 配置
 	DeleteKVConfig = 102
 
+	// ========== NameServer 相关 ==========
+
+	// GetRouteInfoByTopic 获取 Topic 路由信息
+	GetRouteInfoByTopic = 105
+
+	// GetBrokerClusterInfo 获取集群信息
+	GetBrokerClusterInfo = 106
+
+	// ========== 消费者/订阅组/Topic 管理 ==========
+
+	// UpdateAndCreateSubscriptionGroup 创建或更新订阅组
+	UpdateAndCreateSubscriptionGroup = 200
+
+	// GetAllSubscriptionGroupConfig 获取所有订阅组配置
+	GetAllSubscriptionGroupConfig = 201
+
+	// GetTopicStatsInfo 获取 Topic 统计信息
+	GetTopicStatsInfo = 202
+
+	// GetConsumerConnectionList 获取消费者连接列表
+	GetConsumerConnectionList = 203
+
+	// GetProducerConnectionList 获取生产者连接列表
+	GetProducerConnectionList = 204
+
+	// WipeWritePermOfBroker 清除 Broker 写权限 (Java: WIPE_WRITE_PERM_OF_BROKER)
+	WipeWritePermOfBroker = 205
+
+	// GetAllTopicListFromNamesrv 从 NameServer 获取所有 Topic 列表
+	GetAllTopicListFromNamesrv = 206
+
+	// DeleteSubscriptionGroup 删除订阅组
+	DeleteSubscriptionGroup = 207
+
+	// GetConsumeStats 获取消费统计
+	GetConsumeStats = 208
+
+	// DeleteTopicInBroker 在 Broker 中删除 Topic
+	DeleteTopicInBroker = 215
+
+	// DeleteTopicInNamesrv 在 NameServer 中删除 Topic
+	DeleteTopicInNamesrv = 216
+
 	// GetKVListByNamespace 按命名空间获取 KV 列表
 	GetKVListByNamespace = 219
 
-	// ========== 高级清理操作 ==========
+	// ResetConsumerOffset 重置消费者 Offset（admin → broker → consumer）
+	// Java: RESET_CONSUMER_CLIENT_OFFSET = 220（broker → consumer 方向）
+	// admin 工具实际应使用 InvokeBrokerToResetOffset(222)，但此处保留名称兼容
+	ResetConsumerOffset = 222
 
-	// CleanExpiredConsumeQueue 清理过期消费队列
-	CleanExpiredConsumeQueue = 213
+	// GetConsumerStatusFromClient 获取消费者状态（broker → consumer 方向）
+	GetConsumerStatusFromClient = 221
 
-	// CleanUnusedTopic 清理未使用 Topic
-	CleanUnusedTopic = 214
+	// InvokeBrokerToGetConsumerStatus admin → broker 获取消费者状态
+	// Java: INVOKE_BROKER_TO_GET_CONSUMER_STATUS
+	InvokeBrokerToGetConsumerStatus = 223
 
-	// DeleteExpiredCommitLog 删除过期 CommitLog
-	DeleteExpiredCommitLog = 217
+	// GetTopicsByCluster 按集群获取 Topic 列表
+	GetTopicsByCluster = 224
 
-	// QueryConsumeQueue 查询消费队列
-	QueryConsumeQueue = 218
+	// ========== 300 段 ==========
 
-	// ========== Broker 容器管理 ==========
+	// QueryTopicConsumeByWho 查询 Topic 被谁消费
+	QueryTopicConsumeByWho = 300
 
-	// AddBrokerToContainer 添加 Broker 到容器
-	AddBrokerToContainer = 350
+	// QueryConsumeTimeSpan 查询消费时间跨度 (Java: QUERY_CONSUME_TIME_SPAN)
+	QueryConsumeTimeSpan = 303
 
-	// RemoveBrokerFromContainer 从容器移除 Broker
-	RemoveBrokerFromContainer = 351
+	// CleanExpiredConsumeQueue 清理过期消费队列 (Java: CLEAN_EXPIRED_CONSUMEQUEUE)
+	CleanExpiredConsumeQueue = 306
 
-	// GetBrokerEpochCache 获取 Broker Epoch 缓存
-	GetBrokerEpochCache = 340
-
-	// ========== 消息高级操作 ==========
+	// GetConsumerRunningInfo 获取消费者运行时信息
+	GetConsumerRunningInfo = 307
 
 	// ConsumeMessageDirectly 直接消费消息
 	ConsumeMessageDirectly = 309
 
-	// ResumeCheckHalfMessage 恢复检查半消息
-	ResumeCheckHalfMessage = 341
+	// CloneGroupOffset 克隆消费组偏移 (Java: CLONE_GROUP_OFFSET)
+	CloneGroupOffset = 314
 
-	// SetMessageRequestMode 设置消息请求模式
-	SetMessageRequestMode = 342
+	// ViewBrokerStatsData 查看 Broker 统计数据 (Java: VIEW_BROKER_STATS_DATA)
+	ViewBrokerStatsData = 315
 
-	// ========== 同步状态 ==========
+	// CleanUnusedTopic 清理未使用 Topic (Java: CLEAN_UNUSED_TOPIC)
+	CleanUnusedTopic = 316
 
-	// GetInSyncStateData 获取同步状态数据
-	GetInSyncStateData = 338
+	// GetBrokerConsumeStats 获取 Broker 消费统计 (Java: GET_BROKER_CONSUME_STATS)
+	GetBrokerConsumeStats = 317
+
+	// UpdateNamesrvConfig 更新 NameServer 配置
+	UpdateNamesrvConfig = 318
+
+	// GetNamesrvConfig 获取 NameServer 配置
+	GetNamesrvConfig = 319
+
+	// QueryConsumeQueue 查询消费队列 (Java: QUERY_CONSUME_QUEUE)
+	QueryConsumeQueue = 321
+
+	// ResumeCheckHalfMessage 恢复检查半消息 (Java: RESUME_CHECK_HALF_MESSAGE)
+	ResumeCheckHalfMessage = 323
+
+	// AddWritePermOfBroker 添加 Broker 写权限 (Java: ADD_WRITE_PERM_OF_BROKER)
+	AddWritePermOfBroker = 327
+
+	// GetAllProducerInfo 获取所有生产者信息 (Java: GET_ALL_PRODUCER_INFO)
+	GetProducerInfo = 328
+
+	// DeleteExpiredCommitLog 删除过期 CommitLog (Java: DELETE_EXPIRED_COMMITLOG)
+	DeleteExpiredCommitLog = 329
+
+	// ========== 340+ ==========
+
+	// QueryTopicsByConsumer 查询消费者订阅的 Topic
+	QueryTopicsByConsumer = 343
+
+	// QuerySubscription 查询订阅信息 (Java: QUERY_SUBSCRIPTION_BY_CONSUMER)
+	QuerySubscription = 345
+
+	// GetTopicConfig 获取单个 Topic 配置 (Java: GET_TOPIC_CONFIG)
+	GetTopicConfig = 351
+
+	// GetSubscriptionGroupConfig 获取订阅组配置 (Java: GET_SUBSCRIPTIONGROUP_CONFIG)
+	GetSubscriptionGroupConfig = 352
+
+	// UpdateAndGetGroupForbidden 更新并获取组禁止状态 (Java: UPDATE_AND_GET_GROUP_FORBIDDEN)
+	UpdateAndGetGroupForbidden = 353
+
+	// CheckRocksdbCqWriteProgress 检查 RocksDB CQ 写入进度 (Java: CHECK_ROCKSDB_CQ_WRITE_PROGRESS)
+	CheckRocksdbCqWriteProgress = 354
+
+	// ExportRocksDBConfigToJson 导出 RocksDB 配置 (Java: EXPORT_ROCKSDB_CONFIG_TO_JSON)
+	ExportRocksDBConfigToJson = 355
+
+	// ========== 消息请求模式 ==========
+
+	// SetMessageRequestMode 设置消息请求模式 (Java: SET_MESSAGE_REQUEST_MODE)
+	SetMessageRequestMode = 401
 
 	// ========== 静态 Topic ==========
 
-	// CreateStaticTopic 创建静态 Topic
-	CreateStaticTopic = 345
+	// CreateStaticTopic 创建静态 Topic (Java: UPDATE_AND_CREATE_STATIC_TOPIC)
+	CreateStaticTopic = 513
 
-	// ========== P3 边缘功能 ==========
+	// ========== Broker 容器/HA (RocketMQ 5.x) ==========
 
-	// UpdateColdDataFlowCtrGroupConfig 更新冷数据流控配置
-	UpdateColdDataFlowCtrGroupConfig = 410
+	// AddBrokerToContainer 添加 Broker 到容器 (Java: ADD_BROKER)
+	AddBrokerToContainer = 902
 
-	// RemoveColdDataFlowCtrGroupConfig 移除冷数据流控配置
-	RemoveColdDataFlowCtrGroupConfig = 411
+	// RemoveBrokerFromContainer 从容器移除 Broker (Java: REMOVE_BROKER)
+	RemoveBrokerFromContainer = 903
 
-	// GetColdDataFlowCtrInfo 获取冷数据流控信息
-	GetColdDataFlowCtrInfo = 412
+	// GetBrokerHAStatus 获取 Broker HA 状态 (Java: GET_BROKER_HA_STATUS)
+	GetBrokerHAStatus = 907
 
-	// SetCommitLogReadAheadMode 设置 CommitLog 预读模式
-	SetCommitLogReadAheadMode = 413
+	// ResetMasterFlushOffset 重置 Master Flush Offset (Java: RESET_MASTER_FLUSH_OFFSET)
+	ResetMasterFlushOffset = 908
 
-	// ExportRocksDBConfigToJson 导出 RocksDB 配置
-	ExportRocksDBConfigToJson = 414
+	// ========== Controller 相关 (RocketMQ 5.x) ==========
 
-	// CheckRocksdbCqWriteProgress 检查 RocksDB CQ 写入进度
-	CheckRocksdbCqWriteProgress = 415
+	// ControllerElectMaster Controller 选举 Master (Java: CONTROLLER_ELECT_MASTER)
+	ControllerElectMaster = 1002
 
-	// SwitchTimerEngine 切换定时器引擎
-	SwitchTimerEngine = 416
+	// ControllerGetMetadataInfo Controller 获取元数据 (Java: CONTROLLER_GET_METADATA_INFO)
+	ControllerGetMetadataInfo = 1005
 
-	// ExportPopRecords 导出 Pop 记录
-	ExportPopRecords = 417
+	// GetInSyncStateData 获取同步状态数据 (Java: CONTROLLER_GET_SYNC_STATE_DATA)
+	GetInSyncStateData = 1006
 
-	// SearchOffset 搜索偏移（已废弃）
-	SearchOffset = 29
+	// GetBrokerEpochCache 获取 Broker Epoch 缓存 (Java: GET_BROKER_EPOCH_CACHE)
+	GetBrokerEpochCache = 1007
+
+	// ControllerUpdateConfig 更新 Controller 配置 (Java: UPDATE_CONTROLLER_CONFIG)
+	ControllerUpdateConfig = 1009
+
+	// ControllerGetConfig 获取 Controller 配置 (Java: GET_CONTROLLER_CONFIG)
+	ControllerGetConfig = 1010
+
+	// CleanControllerBrokerData 清理 Controller Broker 数据 (Java: CLEAN_BROKER_DATA)
+	CleanControllerBrokerData = 1011
+
+	// ========== 冷数据流控 ==========
+
+	// UpdateColdDataFlowCtrGroupConfig 更新冷数据流控配置 (Java: UPDATE_COLD_DATA_FLOW_CTR_CONFIG)
+	UpdateColdDataFlowCtrGroupConfig = 2001
+
+	// RemoveColdDataFlowCtrGroupConfig 移除冷数据流控配置 (Java: REMOVE_COLD_DATA_FLOW_CTR_CONFIG)
+	RemoveColdDataFlowCtrGroupConfig = 2002
+
+	// GetColdDataFlowCtrInfo 获取冷数据流控信息 (Java: GET_COLD_DATA_FLOW_CTR_INFO)
+	GetColdDataFlowCtrInfo = 2003
+
+	// SetCommitLogReadAheadMode 设置 CommitLog 预读模式 (Java: SET_COMMITLOG_READ_MODE)
+	SetCommitLogReadAheadMode = 2004
+
+	// ========== ACL 用户管理相关 (RocketMQ 5.x) ==========
+
+	// CreateUser 创建用户 (Java: AUTH_CREATE_USER)
+	CreateUser = 3001
+
+	// UpdateUser 更新用户 (Java: AUTH_UPDATE_USER)
+	UpdateUser = 3002
+
+	// DeleteUser 删除用户 (Java: AUTH_DELETE_USER)
+	DeleteUser = 3003
+
+	// GetUser 获取用户 (Java: AUTH_GET_USER)
+	GetUser = 3004
+
+	// ListUser 列出用户 (Java: AUTH_LIST_USER)
+	ListUser = 3005
+
+	// CreateAcl 创建 ACL (Java: AUTH_CREATE_ACL)
+	CreateAcl = 3006
+
+	// UpdateAcl 更新 ACL (Java: AUTH_UPDATE_ACL)
+	UpdateAcl = 3007
+
+	// DeleteAcl 删除 ACL (Java: AUTH_DELETE_ACL)
+	DeleteAcl = 3008
+
+	// GetAcl 获取 ACL (Java: AUTH_GET_ACL)
+	GetAcl = 3009
+
+	// ListAcl 列出 ACL (Java: AUTH_LIST_ACL)
+	ListAcl = 3010
 )
 
 // 响应码定义

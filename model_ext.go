@@ -40,6 +40,42 @@ type AclList struct {
 }
 
 // =============================================================================
+// 旧版 ACL 配置（RocketMQ 4.x，基于 plain_acl.yml）
+// =============================================================================
+
+// PlainAccessConfig 旧版 ACL 访问配置（RocketMQ 4.x）
+type PlainAccessConfig struct {
+	AccessKey          string   `json:"accessKey"`          // 访问密钥
+	SecretKey          string   `json:"secretKey"`          // 秘密密钥
+	WhiteRemoteAddress string   `json:"whiteRemoteAddress"` // 白名单地址
+	Admin              bool     `json:"admin"`              // 是否管理员
+	DefaultTopicPerm   string   `json:"defaultTopicPerm"`   // 默认 Topic 权限: DENY / PUB / SUB / PUB|SUB
+	DefaultGroupPerm   string   `json:"defaultGroupPerm"`   // 默认 Group 权限
+	TopicPerms         []string `json:"topicPerms"`         // Topic 权限列表, e.g. ["topicA=PUB", "topicB=SUB"]
+	GroupPerms         []string `json:"groupPerms"`         // Group 权限列表, e.g. ["groupA=SUB"]
+}
+
+// BrokerClusterAclVersionInfo Broker 集群 ACL 版本信息（code 52 响应）
+type BrokerClusterAclVersionInfo struct {
+	BrokerAddr        string            `json:"brokerAddr"`        // Broker 地址
+	BrokerName        string            `json:"brokerName"`        // Broker 名称
+	ClusterName       string            `json:"clusterName"`       // 集群名称
+	Version           string            `json:"version"`           // ACL 配置版本
+	AllAclFileVersion map[string]string `json:"allAclFileVersion"` // 所有 ACL 文件版本
+}
+
+// =============================================================================
+// Broker 消费统计列表
+// =============================================================================
+
+// ConsumeStatsList Broker 消费统计列表（GET_BROKER_CONSUME_STATS 响应）
+type ConsumeStatsList struct {
+	BrokerAddr string                    `json:"brokerAddr"` // Broker 地址
+	TotalDiff  int64                     `json:"totalDiff"`  // 总差值
+	ConsumeStatsList []map[string]interface{} `json:"consumeStatsList"` // 消费统计列表
+}
+
+// =============================================================================
 // 消息轨迹
 // =============================================================================
 

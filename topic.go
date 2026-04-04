@@ -247,12 +247,13 @@ func (c *Client) DeleteTopicInNameServer(ctx context.Context, topic string) erro
 	return nil
 }
 
-// ExamineTopicConfig 查询 Topic 配置
+// ExamineTopicConfig 查询单个 Topic 配置
+// Java: GET_TOPIC_CONFIG = 351
 func (c *Client) ExamineTopicConfig(ctx context.Context, brokerAddr, topic string) (*TopicConfig, error) {
 	extFields := map[string]string{
 		"topic": topic,
 	}
-	cmd := remoting.NewRequest(remoting.GetAllTopicConfig, extFields)
+	cmd := remoting.NewRequest(remoting.GetTopicConfig, extFields)
 
 	resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
 	if err != nil {
@@ -263,19 +264,12 @@ func (c *Client) ExamineTopicConfig(ctx context.Context, brokerAddr, topic strin
 		return nil, NewAdminError(resp.Code, resp.Remark)
 	}
 
-	// 解析所有配置，然后找到目标 Topic
-	var wrapper struct {
-		TopicConfigTable map[string]*TopicConfig `json:"topicConfigTable"`
-	}
-	if err := json.Unmarshal(resp.Body, &wrapper); err != nil {
+	var config TopicConfig
+	if err := json.Unmarshal(resp.Body, &config); err != nil {
 		return nil, fmt.Errorf("解析 Topic 配置失败: %w", err)
 	}
 
-	if config, ok := wrapper.TopicConfigTable[topic]; ok {
-		return config, nil
-	}
-
-	return nil, ErrTopicNotFound
+	return &config, nil
 }
 
 // QueryTopicConsumeByWho 查询 Topic 被哪些消费者消费
