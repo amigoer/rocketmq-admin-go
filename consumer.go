@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/amigoer/rocketmq-admin-go/protocol/remoting"
 )
@@ -185,6 +187,174 @@ func (c *Client) ExamineConsumerConnectionInfo(ctx context.Context, consumerGrou
 	return nil, ErrConsumerGroupNotFound
 }
 
+// ExamineConsumeStatsByTopic 按 Topic 过滤查询消费统计
+func (c *Client) ExamineConsumeStatsByTopic(ctx context.Context, consumerGroup, topic string) (*ConsumeStats, error) {
+	// 获取集群信息
+	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &ConsumeStats{
+		OffsetTable: make(map[string]*OffsetWrapper),
+	}
+
+	for _, brokerData := range clusterInfo.BrokerAddrTable {
+		var brokerAddr string
+		for _, addr := range brokerData.BrokerAddrs {
+			brokerAddr = addr
+			break
+		}
+		if brokerAddr == "" {
+			continue
+		}
+
+		extFields := map[string]string{
+			"consumerGroup": consumerGroup,
+			"topic":         topic,
+		}
+		cmd := remoting.NewRequest(remoting.GetConsumeStats, extFields)
+
+		resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+		if err != nil {
+			continue
+		}
+		if resp.Code != remoting.Success {
+			continue
+		}
+
+		var stats ConsumeStats
+		if err := json.Unmarshal(resp.Body, &stats); err != nil {
+			continue
+		}
+
+		for k, v := range stats.OffsetTable {
+			result.OffsetTable[k] = v
+		}
+		result.ConsumeTps += stats.ConsumeTps
+	}
+
+	return result, nil
+}
+
+// FetchConsumeStatsInBroker 获取单个 Broker 上的所有消费统计
+// Java: GET_BROKER_CONSUME_STATS = 317
+func (c *Client) FetchConsumeStatsInBroker(ctx context.Context, brokerAddr string, isOrder bool) (*ConsumeStatsList, error) {
+	extFields := map[string]string{
+		"isOrder": fmt.Sprintf("%t", isOrder),
+	}
+	cmd := remoting.NewRequest(remoting.GetBrokerConsumeStats, extFields)
+
+	resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != remoting.Success {
+		return nil, NewAdminError(resp.Code, resp.Remark)
+	}
+
+	var result ConsumeStatsList
+	if err := json.Unmarshal(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("解析 Broker 消费统计失败: %w", err)
+	}
+
+	return &result, nil
+}
+
+// QuerySubscription 查询消费者对某 Topic 的订阅详情
+// Java: QUERY_SUBSCRIPTION_BY_CONSUMER = 345
+func (c *Client) QuerySubscription(ctx context.Context, consumerGroup, topic string) (*SubscriptionData, error) {
+	extFields := map[string]string{
+		"group": consumerGroup,
+		"topic": topic,
+	}
+	cmd := remoting.NewRequest(remoting.QuerySubscription, extFields)
+
+	// 获取集群信息找到 Broker
+	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, brokerData := range clusterInfo.BrokerAddrTable {
+		var brokerAddr string
+		for _, addr := range brokerData.BrokerAddrs {
+			brokerAddr = addr
+			break
+		}
+		if brokerAddr == "" {
+			continue
+		}
+
+		resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+		if err != nil {
+			continue
+		}
+		if resp.Code != remoting.Success {
+			continue
+		}
+
+		var sub SubscriptionData
+		if err := json.Unmarshal(resp.Body, &sub); err != nil {
+			continue
+		}
+
+		return &sub, nil
+	}
+
+	return nil, fmt.Errorf("未找到消费者组 %s 对 Topic %s 的订阅信息", consumerGroup, topic)
+}
+
+// GetConsumeStatus 获取消费状态（每个 queue 的 offset）
+// Java: INVOKE_BROKER_TO_GET_CONSUMER_STATUS = 223
+// 通过 broker 转发到 consumer 客户端获取实时消费状态
+func (c *Client) GetConsumeStatus(ctx context.Context, topic, consumerGroup, clientAddr string) (map[string]map[string]int64, error) {
+	extFields := map[string]string{
+		"topic": topic,
+		"group": consumerGroup,
+	}
+	if clientAddr != "" {
+		extFields["clientAddr"] = clientAddr
+	}
+	cmd := remoting.NewRequest(remoting.InvokeBrokerToGetConsumerStatus, extFields)
+
+	// 获取 Topic 路由找到 Broker
+	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]map[string]int64)
+
+	for _, brokerData := range routeData.BrokerDatas {
+		brokerAddr := brokerData.BrokerAddrs["0"]
+		if brokerAddr == "" {
+			continue
+		}
+
+		resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+		if err != nil {
+			continue
+		}
+		if resp.Code != remoting.Success {
+			continue
+		}
+
+		// 响应格式: map[clientId] -> map[queueKey] -> offset
+		var statusTable map[string]map[string]int64
+		if err := json.Unmarshal(resp.Body, &statusTable); err != nil {
+			continue
+		}
+
+		for k, v := range statusTable {
+			result[k] = v
+		}
+	}
+
+	return result, nil
+}
+
 // =============================================================================
 // Offset 管理接口
 // =============================================================================
@@ -234,13 +404,26 @@ func (c *Client) ResetOffsetByTimestamp(ctx context.Context, topic, group string
 		}
 
 		// 转换为 MessageQueue 格式
+		// queueKey 格式: {"brokerName":"xxx","queueId":0,"topic":"xxx"} 或 brokerName-queueId
 		for queueKey, offset := range offsetTable {
 			mq := MessageQueue{
 				Topic:      topic,
 				BrokerName: brokerData.BrokerName,
 			}
+			// 尝试从 JSON 格式解析
+			var mqParsed MessageQueue
+			if err := json.Unmarshal([]byte(queueKey), &mqParsed); err == nil {
+				mq = mqParsed
+			} else {
+				// 尝试从简单格式解析 queueId
+				parts := strings.Split(queueKey, "-")
+				if len(parts) >= 2 {
+					if qid, err := strconv.Atoi(parts[len(parts)-1]); err == nil {
+						mq.QueueId = qid
+					}
+				}
+			}
 			result[mq] = offset
-			_ = queueKey // 忽略具体队列解析
 		}
 	}
 
@@ -321,11 +504,7 @@ func (c *Client) GetConsumerRunningInfo(ctx context.Context, consumerGroup, clie
 func (c *Client) QueryTopicsByConsumer(ctx context.Context, consumerGroup string) (*TopicList, error) {
 	extFields := map[string]string{
 		"consumerGroup": consumerGroup,
-		"clientId":      "", // Removed clientId logic as it wasn't used in original admin_ext.go or required by namesrv
 	}
-	// Warning: The admin_ext.go version was simpler. Wait, QueryTopicsByConsumer in admin_ext.go sends request to NameServer.
-	// Let's recheck. Yes, Send request to NameServer. Code is correct.
-
 	cmd := remoting.NewRequest(remoting.QueryTopicsByConsumer, extFields)
 
 	resp, err := c.invokeNameServer(ctx, cmd)
@@ -390,7 +569,7 @@ func (c *Client) QueryConsumeTimeSpan(ctx context.Context, topic, consumerGroup 
 
 // GetAllSubscriptionGroup 获取所有订阅组
 func (c *Client) GetAllSubscriptionGroup(ctx context.Context, brokerAddr string) (map[string]*SubscriptionGroupConfig, error) {
-	cmd := remoting.NewRequest(remoting.GetAllSubscriptionGroup, nil)
+	cmd := remoting.NewRequest(remoting.GetAllSubscriptionGroupConfig, nil)
 
 	resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
 	if err != nil {
@@ -419,7 +598,7 @@ func (c *Client) UpdateConsumeOffset(ctx context.Context, brokerAddr, consumerGr
 		"queueId":       fmt.Sprintf("%d", queueId),
 		"commitOffset":  fmt.Sprintf("%d", offset),
 	}
-	cmd := remoting.NewRequest(remoting.UpdateConsumeOffset, extFields)
+	cmd := remoting.NewRequest(remoting.UpdateConsumerOffset, extFields)
 
 	resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
 	if err != nil {
@@ -493,40 +672,65 @@ func isSystemGroup(groupName string) bool {
 }
 
 // CloneGroupOffset 克隆消费组偏移
+// Java: CLONE_GROUP_OFFSET = 314，发送到 broker 由 broker 端执行克隆
 func (c *Client) CloneGroupOffset(ctx context.Context, srcGroup, destGroup, topic string, isOffline bool) error {
-	// 获取源组消费统计
-	srcStats, err := c.ExamineConsumeStats(ctx, srcGroup)
+	// 获取 Topic 路由找到所有 Broker
+	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
-		return fmt.Errorf("获取源组消费统计失败: %w", err)
+		return fmt.Errorf("获取 Topic 路由信息失败: %w", err)
 	}
 
-	// 复制偏移到目标组
-	// 注意：这里需要遍历所有 OffsetWrapper，然后调用 UpdateConsumeOffset
-	// 但现有代码中只用了 placeholders。我们保留原样。
-	for key, wrapper := range srcStats.OffsetTable {
-		// 解析 key 获取 brokerName 和 queueId
-		// key 格式: topic@brokerName@queueId
-		// 简化实现，直接使用现有接口
-		_ = key
-		_ = wrapper
+	for _, brokerData := range routeData.BrokerDatas {
+		brokerAddr := brokerData.BrokerAddrs["0"] // Master
+		if brokerAddr == "" {
+			continue
+		}
+
+		extFields := map[string]string{
+			"srcGroup":  srcGroup,
+			"destGroup": destGroup,
+			"topic":     topic,
+			"offline":   fmt.Sprintf("%t", isOffline),
+		}
+		cmd := remoting.NewRequest(remoting.CloneGroupOffset, extFields)
+
+		resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+		if err != nil {
+			return fmt.Errorf("克隆偏移到 %s 失败: %w", brokerAddr, err)
+		}
+		if resp.Code != remoting.Success {
+			return NewAdminError(resp.Code, resp.Remark)
+		}
 	}
 
 	return nil
 }
 
 // UpdateAndGetGroupReadForbidden 更新并获取组读取禁止状态
-func (c *Client) UpdateAndGetGroupReadForbidden(ctx context.Context, brokerAddr, groupName, topic string, forbid bool) (bool, error) {
-	// 使用更新订阅组的方式
-	config := SubscriptionGroupConfig{
-		GroupName:     groupName,
-		ConsumeEnable: !forbid,
+// Java: UPDATE_AND_GET_GROUP_FORBIDDEN = 353
+func (c *Client) UpdateAndGetGroupReadForbidden(ctx context.Context, brokerAddr, groupName, topic string, readable bool) (bool, error) {
+	extFields := map[string]string{
+		"group":    groupName,
+		"topic":    topic,
+		"readable": fmt.Sprintf("%t", readable),
 	}
+	cmd := remoting.NewRequest(remoting.UpdateAndGetGroupForbidden, extFields)
 
-	if err := c.CreateSubscriptionGroup(ctx, brokerAddr, config); err != nil {
+	resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+	if err != nil {
 		return false, err
 	}
 
-	return forbid, nil
+	if resp.Code != remoting.Success {
+		return false, NewAdminError(resp.Code, resp.Remark)
+	}
+
+	// 响应中返回实际的 readable 状态
+	if v, ok := resp.ExtFields["readable"]; ok {
+		return v == "true", nil
+	}
+
+	return readable, nil
 }
 
 // =============================================================================

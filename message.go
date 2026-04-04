@@ -170,44 +170,61 @@ func (c *Client) SetMessageRequestMode(ctx context.Context, brokerAddr, topic, c
 }
 
 // =============================================================================
-// Pop 记录
+// 消息轨迹
 // =============================================================================
 
-// PopRecord Pop 消费记录
-type PopRecord struct {
-	Topic         string `json:"topic"`         // Topic
-	ConsumerGroup string `json:"consumerGroup"` // 消费者组
-	QueueId       int    `json:"queueId"`       // 队列 ID
-	StartOffset   int64  `json:"startOffset"`   // 开始偏移
-	MsgCount      int    `json:"msgCount"`      // 消息数
-	PopTime       int64  `json:"popTime"`       // Pop 时间
-	InvisibleTime int64  `json:"invisibleTime"` // 不可见时间
-	BornHost      string `json:"bornHost"`      // 客户端地址
-}
-
-// ExportPopRecords 导出 Pop 记录
-func (c *Client) ExportPopRecords(ctx context.Context, brokerAddr, topic, consumerGroup string) ([]PopRecord, error) {
-	extFields := map[string]string{
-		"topic":         topic,
-		"consumerGroup": consumerGroup,
+// MessageTrackDetail 查询消息消费轨迹
+// 根据消息的 Topic 找到所有消费者组，然后逐一查询消费状态
+func (c *Client) MessageTrackDetail(ctx context.Context, msg *MessageExt) ([]MessageTrack, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("消息不能为空")
 	}
-	cmd := remoting.NewRequest(remoting.ExportPopRecords, extFields)
 
-	resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+	// 查询哪些消费者组在消费这个 Topic
+	groups, err := c.QueryTopicConsumeByWho(ctx, msg.Topic)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("查询 Topic 消费者失败: %w", err)
 	}
 
-	if resp.Code != remoting.Success {
-		return nil, NewAdminError(resp.Code, resp.Remark)
+	var tracks []MessageTrack
+	for _, group := range groups {
+		track := MessageTrack{
+			ConsumerGroup: group,
+			TrackType:     "UNKNOWN",
+		}
+
+		// 尝试获取消费者连接信息
+		connInfo, err := c.ExamineConsumerConnectionInfo(ctx, group)
+		if err != nil {
+			track.TrackType = "NOT_ONLINE"
+			track.ExceptionDesc = err.Error()
+			tracks = append(tracks, track)
+			continue
+		}
+
+		if connInfo.ConsumeType == "CONSUME_ACTIVELY" {
+			track.TrackType = "PULL"
+		} else {
+			// 检查订阅信息
+			if sub, ok := connInfo.SubscriptionTable[msg.Topic]; ok {
+				if sub.ExpressionType == "TAG" {
+					if sub.SubString == "*" {
+						track.TrackType = "CONSUMED"
+					} else {
+						track.TrackType = "CONSUMED"
+					}
+				} else {
+					track.TrackType = "CONSUMED"
+				}
+			} else {
+				track.TrackType = "NOT_CONSUME_YET"
+			}
+		}
+
+		tracks = append(tracks, track)
 	}
 
-	var records []PopRecord
-	if err := json.Unmarshal(resp.Body, &records); err != nil {
-		return nil, fmt.Errorf("解析 Pop 记录失败: %w", err)
-	}
-
-	return records, nil
+	return tracks, nil
 }
 
 // =============================================================================
@@ -221,7 +238,7 @@ func (c *Client) SearchOffset(ctx context.Context, brokerAddr, topic string, que
 		"queueId":   fmt.Sprintf("%d", queueId),
 		"timestamp": fmt.Sprintf("%d", timestamp),
 	}
-	cmd := remoting.NewRequest(remoting.SearchOffset, extFields)
+	cmd := remoting.NewRequest(remoting.SearchOffsetByTimestamp, extFields)
 
 	resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
 	if err != nil {

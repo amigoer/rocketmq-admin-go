@@ -259,26 +259,3 @@ func (c *Client) CheckRocksdbCqWriteProgress(ctx context.Context, brokerAddr, to
 	return progress, nil
 }
 
-// =============================================================================
-// 定时器引擎
-// =============================================================================
-
-// SwitchTimerEngine 切换定时器引擎
-// role: "master" 或 "slave"
-func (c *Client) SwitchTimerEngine(ctx context.Context, brokerAddr, role string) error {
-	extFields := map[string]string{
-		"role": role,
-	}
-	cmd := remoting.NewRequest(remoting.SwitchTimerEngine, extFields)
-
-	resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != remoting.Success {
-		return NewAdminError(resp.Code, resp.Remark)
-	}
-
-	return nil
-}

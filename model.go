@@ -1,5 +1,7 @@
 package admin
 
+import "strconv"
+
 // =============================================================================
 // 集群相关模型
 // =============================================================================
@@ -248,5 +250,5 @@ type MessageQueue struct {
 
 // String 返回消息队列的字符串表示
 func (mq *MessageQueue) String() string {
-	return mq.Topic + "-" + mq.BrokerName + "-" + string(rune(mq.QueueId))
+	return mq.Topic + "-" + mq.BrokerName + "-" + strconv.Itoa(mq.QueueId)
 }
