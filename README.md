@@ -33,7 +33,7 @@
 | **Topic 管理** | 创建/删除 Topic、路由查询、静态 Topic、Topic 权限控制            |   ✅    |
 | **消费者管理** | 订阅组管理、消费进度监控、在线客户端查询、**重置消费位点**       |   ✅    |
 | **消息操作**   | 消息轨迹查询、**消息直接消费**、死信队列处理、半消息恢复         |   ✅    |
-| **权限安全**   | 完整的 ACL 用户管理、白名单/黑名单规则控制                       |   ✅    |
+| **权限安全**   | 5.x RBAC ACL + 4.x 旧版 ACL (plain_acl.yml)，白名单/黑名单规则控制 |   ✅    |
 | **高级功能**   | KV 配置、Controller 模式管理 (5.x)、**冷数据流控**、RocksDB 调优 |   ✅    |
 
 
@@ -44,7 +44,7 @@
 go get github.com/amigoer/rocketmq-admin-go@latest
 ```
 
-> 要求 Go 1.21 或更高版本。
+> 要求 Go 1.25 或更高版本。
 
 
 
@@ -239,7 +239,7 @@ qData, _ := client.QueryConsumeQueue(ctx, "127.0.0.1:10911", topic, 0, 0, 10, "D
 fmt.Printf("获取条目数: %d\n", len(qData))
 ```
 
-### ACL 权限管理
+### ACL 权限管理（5.x RBAC）
 
 ```go
 brokerAddr := "127.0.0.1:10911"
@@ -274,27 +274,57 @@ for _, a := range acls.Acls {
 }
 ```
 
+### ACL 权限管理（4.x 旧版 plain_acl.yml）
+
+```go
+brokerAddr := "127.0.0.1:10911"
+
+// 创建/更新 plain access config
+config := admin.PlainAccessConfig{
+    AccessKey:          "rocketmq_ak",
+    SecretKey:          "rocketmq_sk",
+    Admin:              false,
+    DefaultTopicPerm:   "DENY",
+    DefaultGroupPerm:   "SUB",
+    TopicPerms:         []string{"TopicA=PUB|SUB", "TopicB=PUB"},
+    GroupPerms:         []string{"GroupA=SUB"},
+    WhiteRemoteAddress: "192.168.1.*",
+}
+client.UpdatePlainAccessConfig(ctx, brokerAddr, config)
+
+// 删除 plain access config
+client.DeletePlainAccessConfig(ctx, brokerAddr, "rocketmq_ak")
+
+// 查询 Broker 集群 ACL 版本信息
+aclInfo, _ := client.GetBrokerClusterAclInfo(ctx, brokerAddr)
+fmt.Printf("ACL 版本: %s\n", aclInfo.AclConfigDataVersion)
+
+// 更新全局白名单
+client.UpdateGlobalWhiteAddrsConfig(ctx, brokerAddr, []string{"10.0.0.*", "192.168.*"}, "")
+```
+
 
 
 ## 📊 接口覆盖统计
 
-本项目全面复刻 Java 版 `MQAdminExt` 的 **112 个接口**：
+本项目全面复刻 Java 版 `MQAdminExt` 的 **119 个接口**：
 
 | 分类            | 接口数量 | 核心 (P0) | 常用 (P1) | 进阶 (P2) | 高级 (P3) |
 | --------------- | :------: | :-------: | :-------: | :-------: | :-------: |
 | 生命周期管理    |    2     |     2     |     0     |     0     |     0     |
 | Broker 管理     |    12    |     1     |     5     |     6     |     0     |
 | Topic 管理      |    20    |     5     |     9     |     6     |     0     |
-| 消费者组管理    |    22    |     5     |     7     |    10     |     0     |
+| 消费者组管理    |    26    |     5     |    11     |    10     |     0     |
 | 生产者管理      |    2     |     0     |     2     |     0     |     0     |
 | 集群管理        |    5     |     2     |     2     |     1     |     0     |
-| 消息操作        |    6     |     0     |     2     |     4     |     0     |
+| 消息操作        |    7     |     0     |     3     |     4     |     0     |
 | Offset 管理     |    7     |     1     |     4     |     1     |     1     |
 | KV 配置管理     |    6     |     0     |     0     |     6     |     0     |
-| ACL 权限管理    |    10    |     0     |    10     |     0     |     0     |
+| ACL 权限管理 (5.x) |   10  |     0     |    10     |     0     |     0     |
+| ACL 权限管理 (4.x) |    4  |     0     |     4     |     0     |     0     |
 | Controller 管理 |    5     |     0     |     0     |     5     |     0     |
-| 高级功能        |    15    |     0     |     0     |     7     |     8     |
-| **总计**        | **112**  |  **16**   |  **41**   |  **46**   |   **9**   |
+| 高级功能        |    13    |     0     |     0     |     5     |     8     |
+| **总计**        | **119**  |  **16**   |  **50**   |  **44**   |   **9**   |
 
 > 完整接口对照表请参考 [docs/interfaces.md](./docs/interfaces.md)。
 
