@@ -124,7 +124,7 @@ func (c *Client) ExamineConsumeStats(ctx context.Context, consumerGroup string) 
 		}
 
 		var stats ConsumeStats
-		if err := json.Unmarshal(resp.Body, &stats); err != nil {
+		if err := json.Unmarshal(fixJSONBody(resp.Body), &stats); err != nil {
 			continue
 		}
 
@@ -224,7 +224,7 @@ func (c *Client) ExamineConsumeStatsByTopic(ctx context.Context, consumerGroup, 
 		}
 
 		var stats ConsumeStats
-		if err := json.Unmarshal(resp.Body, &stats); err != nil {
+		if err := json.Unmarshal(fixJSONBody(resp.Body), &stats); err != nil {
 			continue
 		}
 
@@ -255,7 +255,7 @@ func (c *Client) FetchConsumeStatsInBroker(ctx context.Context, brokerAddr strin
 	}
 
 	var result ConsumeStatsList
-	if err := json.Unmarshal(resp.Body, &result); err != nil {
+	if err := json.Unmarshal(fixJSONBody(resp.Body), &result); err != nil {
 		return nil, fmt.Errorf("解析 Broker 消费统计失败: %w", err)
 	}
 
