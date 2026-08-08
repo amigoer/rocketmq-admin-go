@@ -33,6 +33,8 @@ func (c *Client) ExamineBrokerClusterInfo(ctx context.Context) (*ClusterInfo, er
 		return nil, fmt.Errorf("解析集群信息失败: %w", err)
 	}
 
+	c.rememberClusterBrokerNames(&clusterInfo)
+
 	return &clusterInfo, nil
 }
 

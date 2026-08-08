@@ -157,6 +157,9 @@ func (c *Client) ExamineTopicRouteInfo(ctx context.Context, topic string) (*Topi
 		return nil, fmt.Errorf("解析 Topic 路由失败: %w", err)
 	}
 
+	// 记录名称到地址的映射，后续访问这些 Broker 时才能填上 bname。
+	c.rememberRouteBrokerNames(&routeData)
+
 	return &routeData, nil
 }
 

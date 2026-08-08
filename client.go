@@ -15,6 +15,11 @@ type Client struct {
 	mu      sync.RWMutex             // 保护内部状态
 	started bool                     // 是否已启动
 	closed  bool                     // 是否已关闭
+
+	// brokerNames 缓存 Broker 地址到名称的映射，供转发请求填充 bname 字段。
+	// 详见 brokername.go。
+	brokerNameMu sync.RWMutex
+	brokerNames  map[string]string
 }
 
 // NewClient 创建新的运维管理客户端
@@ -119,6 +124,15 @@ func (c *Client) invokeBroker(ctx context.Context, brokerAddr string, cmd *remot
 	conn, err := c.pool.GetOrCreate(brokerAddr)
 	if err != nil {
 		return nil, fmt.Errorf("连接 Broker 失败: %w", err)
+	}
+
+	// RocketMQ Proxy 只有拿到 bname 才知道该把请求转发给哪个 Broker。
+	if cmd != nil && cmd.ExtFields != nil {
+		if _, exists := cmd.ExtFields[brokerNameField]; !exists {
+			if name := c.brokerNameFor(brokerAddr); name != "" {
+				cmd.ExtFields[brokerNameField] = name
+			}
+		}
 	}
 
 	resp, err := conn.InvokeSync(ctx, cmd)
