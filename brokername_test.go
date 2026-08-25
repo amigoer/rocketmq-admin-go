@@ -6,7 +6,7 @@ func newBrokerNameTestClient(t *testing.T) *Client {
 	t.Helper()
 	client, err := NewClient(WithNameServers([]string{"ns:9876"}))
 	if err != nil {
-		t.Fatalf("创建客户端失败: %v", err)
+		t.Fatalf("failed to create client: %v", err)
 	}
 	return client
 }
@@ -32,7 +32,7 @@ func TestRememberRouteBrokerNames(t *testing.T) {
 		t.Fatalf("brokerNameFor(slave) = %q, want broker-b", got)
 	}
 	if got := client.brokerNameFor("unknown:10911"); got != "" {
-		t.Fatalf("未知地址应返回空串，得到 %q", got)
+		t.Fatalf("an unknown address should return an empty string, got %q", got)
 	}
 
 	client.rememberRouteBrokerNames(nil)
@@ -53,7 +53,7 @@ func TestRememberClusterBrokerNames(t *testing.T) {
 		t.Fatalf("brokerNameFor() = %q, want broker-a", got)
 	}
 	if got := client.brokerNameFor("10.0.0.9:10911"); got != "broker-c" {
-		t.Fatalf("BrokerName 为空时应回退到表键，得到 %q", got)
+		t.Fatalf("an empty BrokerName should fall back to the table key, got %q", got)
 	}
 
 	client.rememberClusterBrokerNames(nil)
@@ -64,6 +64,6 @@ func TestRememberBrokerNameIgnoresBlanks(t *testing.T) {
 	client.rememberBrokerName("", "broker-a")
 	client.rememberBrokerName("10.0.0.1:10911", "")
 	if got := client.brokerNameFor("10.0.0.1:10911"); got != "" {
-		t.Fatalf("空名称不应被记录，得到 %q", got)
+		t.Fatalf("an empty name must not be recorded, got %q", got)
 	}
 }

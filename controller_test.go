@@ -17,15 +17,15 @@ func TestIntegration_GetControllerMetaData(t *testing.T) {
 
 	meta, err := client.GetControllerMetaData(ctx, controllerAddr)
 	if err != nil {
-		t.Logf("获取 Controller 元数据失败（Controller 可能未部署）: %v", err)
+		t.Logf("failed to get controller metadata (no controller may be deployed): %v", err)
 		return
 	}
 
-	t.Logf("Controller 元数据:")
+	t.Logf("controller metadata:")
 	t.Logf("  LeaderAddr: %s", meta.LeaderAddr)
 	t.Logf("  LeaderId: %s", meta.LeaderId)
 	t.Logf("  IsLeader: %v", meta.IsLeader)
-	t.Logf("  ControllerAddrs 数量: %d", len(meta.ControllerAddrs))
+	t.Logf("  ControllerAddrs: %d", len(meta.ControllerAddrs))
 }
 
 func TestIntegration_GetControllerConfig(t *testing.T) {
@@ -40,11 +40,11 @@ func TestIntegration_GetControllerConfig(t *testing.T) {
 
 	config, err := client.GetControllerConfig(ctx, controllerAddr)
 	if err != nil {
-		t.Logf("获取 Controller 配置失败（Controller 可能未部署）: %v", err)
+		t.Logf("failed to get controller config (no controller may be deployed): %v", err)
 		return
 	}
 
-	t.Logf("Controller 配置项数量: %d", len(config))
+	t.Logf("controller config entries: %d", len(config))
 	for k, v := range config {
 		t.Logf("  %s = %s", k, v)
 	}
@@ -52,17 +52,17 @@ func TestIntegration_GetControllerConfig(t *testing.T) {
 
 func TestIntegration_UpdateControllerConfig(t *testing.T) {
 	skipIfNoRocketMQ(t)
-	t.Skip("跳过 UpdateControllerConfig 测试：避免影响 Controller 运行")
+	t.Skip("skipping UpdateControllerConfig test: it would disturb a running controller")
 }
 
 func TestIntegration_ElectMaster(t *testing.T) {
 	skipIfNoRocketMQ(t)
-	t.Skip("跳过 ElectMaster 测试：此操作会影响集群")
+	t.Skip("skipping ElectMaster test: the operation would affect the cluster")
 }
 
 func TestIntegration_CleanControllerBrokerData(t *testing.T) {
 	skipIfNoRocketMQ(t)
-	t.Skip("跳过 CleanControllerBrokerData 测试：此操作会清理数据")
+	t.Skip("skipping CleanControllerBrokerData test: the operation would erase data")
 }
 
 func TestIntegration_GetInSyncStateData(t *testing.T) {
@@ -75,7 +75,7 @@ func TestIntegration_GetInSyncStateData(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerNames []string
@@ -84,18 +84,18 @@ func TestIntegration_GetInSyncStateData(t *testing.T) {
 	}
 
 	if len(brokerNames) == 0 {
-		t.Skip("没有可用的 Broker")
+		t.Skip("no Broker available")
 	}
 
 	controllerAddr := "localhost:9878"
 
 	syncStateData, err := client.GetInSyncStateData(ctx, controllerAddr, brokerNames)
 	if err != nil {
-		t.Logf("获取同步状态数据失败（Controller 可能未部署）: %v", err)
+		t.Logf("failed to get in-sync state data (no controller may be deployed): %v", err)
 		return
 	}
 
-	t.Logf("同步状态数据数量: %d", len(syncStateData))
+	t.Logf("in-sync state entries: %d", len(syncStateData))
 	for brokerName, data := range syncStateData {
 		t.Logf("Broker %s:", brokerName)
 		t.Logf("  MasterAddr: %s", data.MasterAddr)

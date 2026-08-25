@@ -14,7 +14,7 @@ func TestIntegration_CleanExpiredConsumerQueueByAddr(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -29,14 +29,14 @@ func TestIntegration_CleanExpiredConsumerQueueByAddr(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	err = client.CleanExpiredConsumerQueueByAddr(ctx, brokerAddr)
 	if err != nil {
-		t.Logf("清理过期消费队列失败: %v", err)
+		t.Logf("failed to clean expired consume queues: %v", err)
 	} else {
-		t.Log("清理过期消费队列成功")
+		t.Log("cleaned expired consume queues")
 	}
 }
 
@@ -50,7 +50,7 @@ func TestIntegration_CleanExpiredConsumerQueue(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var clusterName string
@@ -60,14 +60,14 @@ func TestIntegration_CleanExpiredConsumerQueue(t *testing.T) {
 	}
 
 	if clusterName == "" {
-		t.Skip("没有可用的集群")
+		t.Skip("no cluster available")
 	}
 
 	err = client.CleanExpiredConsumerQueue(ctx, clusterName)
 	if err != nil {
-		t.Logf("按集群清理过期消费队列失败: %v", err)
+		t.Logf("failed to clean expired consume queues by cluster: %v", err)
 	} else {
-		t.Logf("按集群清理过期消费队列成功: %s", clusterName)
+		t.Logf("cleaned expired consume queues on cluster: %s", clusterName)
 	}
 }
 
@@ -81,7 +81,7 @@ func TestIntegration_DeleteExpiredCommitLogByAddr(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -96,14 +96,14 @@ func TestIntegration_DeleteExpiredCommitLogByAddr(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	err = client.DeleteExpiredCommitLogByAddr(ctx, brokerAddr)
 	if err != nil {
-		t.Logf("删除过期 CommitLog 失败: %v", err)
+		t.Logf("failed to delete expired CommitLog files: %v", err)
 	} else {
-		t.Log("删除过期 CommitLog 成功")
+		t.Log("deleted expired CommitLog files")
 	}
 }
 
@@ -117,7 +117,7 @@ func TestIntegration_DeleteExpiredCommitLog(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var clusterName string
@@ -127,14 +127,14 @@ func TestIntegration_DeleteExpiredCommitLog(t *testing.T) {
 	}
 
 	if clusterName == "" {
-		t.Skip("没有可用的集群")
+		t.Skip("no cluster available")
 	}
 
 	err = client.DeleteExpiredCommitLog(ctx, clusterName)
 	if err != nil {
-		t.Logf("按集群删除过期 CommitLog 失败: %v", err)
+		t.Logf("failed to delete expired CommitLog files by cluster: %v", err)
 	} else {
-		t.Logf("按集群删除过期 CommitLog 成功: %s", clusterName)
+		t.Logf("deleted expired CommitLog files on cluster: %s", clusterName)
 	}
 }
 
@@ -148,7 +148,7 @@ func TestIntegration_CleanUnusedTopicByAddr(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -163,14 +163,14 @@ func TestIntegration_CleanUnusedTopicByAddr(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	err = client.CleanUnusedTopicByAddr(ctx, brokerAddr)
 	if err != nil {
-		t.Logf("清理未使用 Topic 失败: %v", err)
+		t.Logf("failed to clean unused topics: %v", err)
 	} else {
-		t.Log("清理未使用 Topic 成功")
+		t.Log("cleaned unused topics")
 	}
 }
 
@@ -184,7 +184,7 @@ func TestIntegration_CleanUnusedTopic(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var clusterName string
@@ -194,14 +194,14 @@ func TestIntegration_CleanUnusedTopic(t *testing.T) {
 	}
 
 	if clusterName == "" {
-		t.Skip("没有可用的集群")
+		t.Skip("no cluster available")
 	}
 
 	err = client.CleanUnusedTopic(ctx, clusterName)
 	if err != nil {
-		t.Logf("按集群清理未使用 Topic 失败: %v", err)
+		t.Logf("failed to clean unused topics by cluster: %v", err)
 	} else {
-		t.Logf("按集群清理未使用 Topic 成功: %s", clusterName)
+		t.Logf("cleaned unused topics on cluster: %s", clusterName)
 	}
 }
 
@@ -215,7 +215,7 @@ func TestIntegration_SetCommitLogReadAheadMode(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -230,14 +230,14 @@ func TestIntegration_SetCommitLogReadAheadMode(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	err = client.SetCommitLogReadAheadMode(ctx, brokerAddr, 1)
 	if err != nil {
-		t.Logf("设置 CommitLog 预读模式失败（可能不支持）: %v", err)
+		t.Logf("failed to set CommitLog read-ahead mode (may be unsupported): %v", err)
 	} else {
-		t.Log("设置 CommitLog 预读模式成功")
+		t.Log("set CommitLog read-ahead mode")
 	}
 }
 
@@ -251,7 +251,7 @@ func TestIntegration_SetCommitLogReadAheadModeInCluster(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var clusterName string
@@ -261,14 +261,14 @@ func TestIntegration_SetCommitLogReadAheadModeInCluster(t *testing.T) {
 	}
 
 	if clusterName == "" {
-		t.Skip("没有可用的集群")
+		t.Skip("no cluster available")
 	}
 
 	err = client.SetCommitLogReadAheadModeInCluster(ctx, clusterName, 1)
 	if err != nil {
-		t.Logf("按集群设置 CommitLog 预读模式失败: %v", err)
+		t.Logf("failed to set CommitLog read-ahead mode by cluster: %v", err)
 	} else {
-		t.Logf("按集群设置 CommitLog 预读模式成功: %s", clusterName)
+		t.Logf("set CommitLog read-ahead mode on cluster: %s", clusterName)
 	}
 }
 
@@ -282,7 +282,7 @@ func TestIntegration_ExportRocksDBConfigToJson(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -297,20 +297,20 @@ func TestIntegration_ExportRocksDBConfigToJson(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	configJson, err := client.ExportRocksDBConfigToJson(ctx, brokerAddr)
 	if err != nil {
-		t.Logf("导出 RocksDB 配置失败（Broker 可能未使用 RocksDB）: %v", err)
+		t.Logf("failed to export RocksDB config (the Broker may not use RocksDB): %v", err)
 		return
 	}
 
-	t.Logf("RocksDB 配置 JSON 长度: %d", len(configJson))
+	t.Logf("RocksDB config JSON length: %d", len(configJson))
 	if len(configJson) > 200 {
-		t.Logf("RocksDB 配置内容（截断）: %s...", configJson[:200])
+		t.Logf("RocksDB config (truncated): %s...", configJson[:200])
 	} else {
-		t.Logf("RocksDB 配置内容: %s", configJson)
+		t.Logf("RocksDB config: %s", configJson)
 	}
 }
 
@@ -324,7 +324,7 @@ func TestIntegration_CheckRocksdbCqWriteProgress(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -339,12 +339,12 @@ func TestIntegration_CheckRocksdbCqWriteProgress(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	topicList, err := client.FetchAllTopicList(ctx)
 	if err != nil {
-		t.Fatalf("获取 Topic 列表失败: %v", err)
+		t.Fatalf("failed to get topic list: %v", err)
 	}
 
 	var testTopic string
@@ -357,16 +357,16 @@ func TestIntegration_CheckRocksdbCqWriteProgress(t *testing.T) {
 	}
 
 	if testTopic == "" {
-		t.Skip("没有可用的测试 Topic")
+		t.Skip("no usable test topic")
 	}
 
 	progress, err := client.CheckRocksdbCqWriteProgress(ctx, brokerAddr, testTopic)
 	if err != nil {
-		t.Logf("检查 RocksDB CQ 写入进度失败（可能不支持）: %v", err)
+		t.Logf("failed to check RocksDB CQ write progress (may be unsupported): %v", err)
 		return
 	}
 
-	t.Logf("RocksDB CQ 写入进度数量: %d", len(progress))
+	t.Logf("RocksDB CQ write progress entries: %d", len(progress))
 	for _, p := range progress {
 		t.Logf("  Topic=%s, QueueId=%d, Progress=%.2f%%, IsCompleted=%v",
 			p.Topic, p.QueueId, p.Progress, p.IsCompleted)

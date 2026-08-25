@@ -14,7 +14,7 @@ func TestIntegration_QueryConsumeQueue(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -29,12 +29,12 @@ func TestIntegration_QueryConsumeQueue(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	topicList, err := client.FetchAllTopicList(ctx)
 	if err != nil {
-		t.Fatalf("获取 Topic 列表失败: %v", err)
+		t.Fatalf("failed to get topic list: %v", err)
 	}
 
 	var testTopic string
@@ -50,16 +50,16 @@ func TestIntegration_QueryConsumeQueue(t *testing.T) {
 	}
 
 	if testTopic == "" {
-		t.Skip("没有可用的测试 Topic")
+		t.Skip("no usable test topic")
 	}
 
 	queueData, err := client.QueryConsumeQueue(ctx, brokerAddr, testTopic, 0, 0, 10, "")
 	if err != nil {
-		t.Logf("查询消费队列失败（可能是队列为空）: %v", err)
+		t.Logf("failed to query consume queue (it may be empty): %v", err)
 		return
 	}
 
-	t.Logf("消费队列数据数量: %d", len(queueData))
+	t.Logf("consume queue entries: %d", len(queueData))
 	for i, data := range queueData {
 		if i >= 3 {
 			break
@@ -79,7 +79,7 @@ func TestIntegration_QueryMessage(t *testing.T) {
 
 	topicList, err := client.FetchAllTopicList(ctx)
 	if err != nil {
-		t.Fatalf("获取 Topic 列表失败: %v", err)
+		t.Fatalf("failed to get topic list: %v", err)
 	}
 
 	var testTopic string
@@ -92,17 +92,17 @@ func TestIntegration_QueryMessage(t *testing.T) {
 	}
 
 	if testTopic == "" {
-		t.Skip("没有可用的测试 Topic")
+		t.Skip("no usable test topic")
 	}
 
 	// An empty key matches every message.
 	messages, err := client.QueryMessage(ctx, testTopic, "", 10, 0, 0)
 	if err != nil {
-		t.Logf("查询消息失败（可能是没有消息）: %v", err)
+		t.Logf("failed to query messages (there may be none): %v", err)
 		return
 	}
 
-	t.Logf("查询到 %d 条消息", len(messages))
+	t.Logf("found %d messages", len(messages))
 	for i, msg := range messages {
 		if i >= 3 {
 			break
@@ -113,7 +113,7 @@ func TestIntegration_QueryMessage(t *testing.T) {
 
 func TestIntegration_ViewMessage(t *testing.T) {
 	skipIfNoRocketMQ(t)
-	t.Skip("跳过 ViewMessage 测试：需要有效的消息 ID")
+	t.Skip("skipping ViewMessage test: needs a valid message id")
 }
 
 func TestIntegration_SearchOffset(t *testing.T) {
@@ -126,7 +126,7 @@ func TestIntegration_SearchOffset(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -141,12 +141,12 @@ func TestIntegration_SearchOffset(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	topicList, err := client.FetchAllTopicList(ctx)
 	if err != nil {
-		t.Fatalf("获取 Topic 列表失败: %v", err)
+		t.Fatalf("failed to get topic list: %v", err)
 	}
 
 	var testTopic string
@@ -159,26 +159,26 @@ func TestIntegration_SearchOffset(t *testing.T) {
 	}
 
 	if testTopic == "" {
-		t.Skip("没有可用的测试 Topic")
+		t.Skip("no usable test topic")
 	}
 
 	offset, err := client.SearchOffset(ctx, brokerAddr, testTopic, 0, 0)
 	if err != nil {
-		t.Logf("搜索偏移失败: %v", err)
+		t.Logf("failed to search offset: %v", err)
 		return
 	}
 
-	t.Logf("Topic %s 队列 0 偏移: %d", testTopic, offset)
+	t.Logf("topic %s queue 0 offset: %d", testTopic, offset)
 }
 
 func TestIntegration_ConsumeMessageDirectly(t *testing.T) {
 	skipIfNoRocketMQ(t)
-	t.Skip("跳过 ConsumeMessageDirectly 测试：需要在线消费者和有效消息 ID")
+	t.Skip("skipping ConsumeMessageDirectly test: needs an online consumer and a valid message id")
 }
 
 func TestIntegration_ResumeCheckHalfMessage(t *testing.T) {
 	skipIfNoRocketMQ(t)
-	t.Skip("跳过 ResumeCheckHalfMessage 测试：需要有效的事务消息 ID")
+	t.Skip("skipping ResumeCheckHalfMessage test: needs a valid transaction message id")
 }
 
 func TestIntegration_SetMessageRequestMode(t *testing.T) {
@@ -191,7 +191,7 @@ func TestIntegration_SetMessageRequestMode(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -206,7 +206,7 @@ func TestIntegration_SetMessageRequestMode(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	topicName := getTestTopicName("MSGMODE")
@@ -233,8 +233,8 @@ func TestIntegration_SetMessageRequestMode(t *testing.T) {
 
 	err = client.SetMessageRequestMode(ctx, brokerAddr, topicName, groupName, 0, 0)
 	if err != nil {
-		t.Logf("设置消息请求模式失败（可能不支持）: %v", err)
+		t.Logf("failed to set message request mode (may be unsupported): %v", err)
 	} else {
-		t.Log("设置消息请求模式成功")
+		t.Log("set message request mode")
 	}
 }

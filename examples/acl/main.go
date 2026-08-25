@@ -18,11 +18,11 @@ func main() {
 	// admin.WithACL("accessKey", "secretKey"), // uncomment if the cluster requires auth
 	)
 	if err != nil {
-		log.Fatalf("创建客户端失败: %v", err)
+		log.Fatalf("failed to create client: %v", err)
 	}
 
 	if err := client.Start(); err != nil {
-		log.Fatalf("启动客户端失败: %v", err)
+		log.Fatalf("failed to start client: %v", err)
 	}
 	defer client.Close()
 
@@ -30,7 +30,7 @@ func main() {
 	// ACL calls address one Broker directly, so its address is needed here.
 	brokerAddr := "127.0.0.1:10911"
 
-	fmt.Println("=== 创建用户: test_user ===")
+	fmt.Println("=== create user: test_user ===")
 	user := admin.UserInfo{
 		Username:   "test_user",
 		Password:   "12345678",
@@ -38,20 +38,20 @@ func main() {
 		UserStatus: "OPEN", // enabled
 	}
 	if err := client.UpdateUser(ctx, brokerAddr, user); err != nil {
-		log.Printf("创建用户失败: %v", err)
+		log.Printf("failed to create user: %v", err)
 	} else {
-		fmt.Println("用户创建成功")
+		fmt.Println("user created")
 	}
 
-	fmt.Println("\n=== 获取用户信息 ===")
+	fmt.Println("\n=== get user info ===")
 	userInfo, err := client.GetUser(ctx, brokerAddr, "test_user")
 	if err != nil {
-		log.Printf("获取用户失败: %v", err)
+		log.Printf("failed to get user: %v", err)
 	} else {
-		fmt.Printf("用户: %s, 状态: %s\n", userInfo.Username, userInfo.UserStatus)
+		fmt.Printf("user: %s, status: %s\n", userInfo.Username, userInfo.UserStatus)
 	}
 
-	fmt.Println("\n=== 配置 ACL 权限 ===")
+	fmt.Println("\n=== configure ACL permissions ===")
 	acl := admin.AclInfo{
 		Subject: "test_user",
 		Policies: []admin.AclPolicy{
@@ -64,18 +64,18 @@ func main() {
 		},
 	}
 	if err := client.UpdateAcl(ctx, brokerAddr, acl); err != nil {
-		log.Printf("配置 ACL 失败: %v", err)
+		log.Printf("failed to configure ACL: %v", err)
 	} else {
-		fmt.Println("ACL 配置成功")
+		fmt.Println("ACL configured")
 	}
 
-	fmt.Println("\n=== 列出 ACL 规则 ===")
+	fmt.Println("\n=== list ACL rules ===")
 	acls, err := client.ListAcl(ctx, brokerAddr)
 	if err != nil {
-		log.Printf("列出 ACL 失败: %v", err)
+		log.Printf("failed to list ACLs: %v", err)
 	} else {
 		for _, a := range acls.Acls {
-			fmt.Printf("主体: %s, 策略数: %d\n", a.Subject, len(a.Policies))
+			fmt.Printf("subject: %s, policies: %d\n", a.Subject, len(a.Policies))
 		}
 	}
 }

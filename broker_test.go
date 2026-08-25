@@ -14,7 +14,7 @@ func TestIntegration_FetchBrokerRuntimeStats(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -29,19 +29,19 @@ func TestIntegration_FetchBrokerRuntimeStats(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	stats, err := client.FetchBrokerRuntimeStats(ctx, brokerAddr)
 	if err != nil {
-		t.Fatalf("获取 Broker 运行时统计失败: %v", err)
+		t.Fatalf("failed to get Broker runtime stats: %v", err)
 	}
 
 	if stats == nil || stats.Table == nil {
-		t.Fatal("统计数据不应为 nil")
+		t.Fatal("stats must not be nil")
 	}
 
-	t.Logf("Broker 运行时统计项数量: %d", len(stats.Table))
+	t.Logf("Broker runtime stat entries: %d", len(stats.Table))
 
 	keyMetrics := []string{
 		"brokerVersion",
@@ -70,7 +70,7 @@ func TestIntegration_GetBrokerConfig(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -85,19 +85,19 @@ func TestIntegration_GetBrokerConfig(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	config, err := client.GetBrokerConfig(ctx, brokerAddr)
 	if err != nil {
-		t.Fatalf("获取 Broker 配置失败: %v", err)
+		t.Fatalf("failed to get Broker config: %v", err)
 	}
 
 	if config == nil {
-		t.Fatal("Broker 配置不应为 nil")
+		t.Fatal("Broker config must not be nil")
 	}
 
-	t.Logf("Broker 配置项数量: %d", len(config))
+	t.Logf("Broker config entries: %d", len(config))
 
 	keyConfigs := []string{
 		"brokerName",
@@ -126,7 +126,7 @@ func TestIntegration_UpdateBrokerConfig(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -141,7 +141,7 @@ func TestIntegration_UpdateBrokerConfig(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	// Updating config can need elevated permissions, so send an empty property
@@ -149,12 +149,12 @@ func TestIntegration_UpdateBrokerConfig(t *testing.T) {
 	properties := map[string]string{}
 
 	if len(properties) == 0 {
-		t.Skip("跳过 Broker 配置更新测试：没有安全的测试配置项")
+		t.Skip("skipping Broker config update test: no config key is safe to change")
 	}
 
 	err = client.UpdateBrokerConfig(ctx, brokerAddr, properties)
 	if err != nil {
-		t.Logf("更新 Broker 配置失败（可能是权限问题）: %v", err)
+		t.Logf("failed to update Broker config (may be a permission issue): %v", err)
 	}
 }
 
@@ -168,7 +168,7 @@ func TestIntegration_WipeWritePermOfBroker(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerName string
@@ -178,11 +178,11 @@ func TestIntegration_WipeWritePermOfBroker(t *testing.T) {
 	}
 
 	if brokerName == "" {
-		t.Fatal("未找到可用的 Broker")
+		t.Fatal("no usable Broker found")
 	}
 
 	// Wiping write permission would disrupt the Broker, so only log the call.
-	t.Logf("测试 WipeWritePermOfBroker (brokerName=%s) - 跳过实际执行以避免影响服务", brokerName)
+	t.Logf("WipeWritePermOfBroker (brokerName=%s) - not executed, it would disrupt the service", brokerName)
 
 }
 
@@ -196,7 +196,7 @@ func TestIntegration_AddWritePermOfBroker(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerName string
@@ -206,10 +206,10 @@ func TestIntegration_AddWritePermOfBroker(t *testing.T) {
 	}
 
 	if brokerName == "" {
-		t.Fatal("未找到可用的 Broker")
+		t.Fatal("no usable Broker found")
 	}
 
-	t.Logf("测试 AddWritePermOfBroker (brokerName=%s) - 跳过实际执行", brokerName)
+	t.Logf("AddWritePermOfBroker (brokerName=%s) - not executed", brokerName)
 }
 
 func TestIntegration_ViewBrokerStatsData(t *testing.T) {
@@ -222,7 +222,7 @@ func TestIntegration_ViewBrokerStatsData(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -237,7 +237,7 @@ func TestIntegration_ViewBrokerStatsData(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	statsNames := []string{
@@ -250,16 +250,16 @@ func TestIntegration_ViewBrokerStatsData(t *testing.T) {
 	for _, statsName := range statsNames {
 		stats, err := client.ViewBrokerStatsData(ctx, brokerAddr, statsName, "")
 		if err != nil {
-			t.Logf("查询统计 %s 失败: %v", statsName, err)
+			t.Logf("failed to query stats %s: %v", statsName, err)
 			continue
 		}
 
-		t.Logf("统计 %s: StatsMinute=%+v, StatsHour=%+v, StatsDay=%+v",
+		t.Logf("stats %s: StatsMinute=%+v, StatsHour=%+v, StatsDay=%+v",
 			statsName, stats.StatsMinute, stats.StatsHour, stats.StatsDay)
 		return
 	}
 
-	t.Log("没有可查询的 Broker 统计数据")
+	t.Log("no Broker stats available to query")
 }
 
 func TestIntegration_GetBrokerHAStatus(t *testing.T) {
@@ -272,7 +272,7 @@ func TestIntegration_GetBrokerHAStatus(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -287,16 +287,16 @@ func TestIntegration_GetBrokerHAStatus(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	status, err := client.GetBrokerHAStatus(ctx, brokerAddr)
 	if err != nil {
-		t.Logf("获取 Broker HA 状态失败（可能不支持）: %v", err)
+		t.Logf("failed to get Broker HA status (may be unsupported): %v", err)
 		return
 	}
 
-	t.Logf("Broker HA 状态: MasterAddr=%s", status.MasterAddr)
+	t.Logf("Broker HA status: MasterAddr=%s", status.MasterAddr)
 }
 
 func TestIntegration_GetBrokerEpochCache(t *testing.T) {
@@ -309,7 +309,7 @@ func TestIntegration_GetBrokerEpochCache(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -324,12 +324,12 @@ func TestIntegration_GetBrokerEpochCache(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	epochInfo, err := client.GetBrokerEpochCache(ctx, brokerAddr)
 	if err != nil {
-		t.Logf("获取 Broker Epoch 缓存失败（可能不支持）: %v", err)
+		t.Logf("failed to get Broker epoch cache (may be unsupported): %v", err)
 		return
 	}
 
@@ -339,10 +339,10 @@ func TestIntegration_GetBrokerEpochCache(t *testing.T) {
 
 func TestIntegration_AddBrokerToContainer(t *testing.T) {
 	skipIfNoRocketMQ(t)
-	t.Skip("跳过 AddBrokerToContainer 测试：需要 Broker 容器环境")
+	t.Skip("skipping AddBrokerToContainer test: needs a Broker container environment")
 }
 
 func TestIntegration_RemoveBrokerFromContainer(t *testing.T) {
 	skipIfNoRocketMQ(t)
-	t.Skip("跳过 RemoveBrokerFromContainer 测试：需要 Broker 容器环境")
+	t.Skip("skipping RemoveBrokerFromContainer test: needs a Broker container environment")
 }

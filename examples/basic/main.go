@@ -17,40 +17,40 @@ func main() {
 		admin.WithNameServers([]string{"127.0.0.1:9876"}),
 	)
 	if err != nil {
-		log.Fatalf("创建客户端失败: %v", err)
+		log.Fatalf("failed to create client: %v", err)
 	}
 
 	if err := client.Start(); err != nil {
-		log.Fatalf("启动客户端失败: %v", err)
+		log.Fatalf("failed to start client: %v", err)
 	}
 	defer client.Close()
 
 	ctx := context.Background()
 
-	fmt.Println("=== 查询集群信息 ===")
+	fmt.Println("=== query cluster info ===")
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		log.Printf("查询集群信息失败: %v", err)
+		log.Printf("failed to query cluster info: %v", err)
 	} else {
-		fmt.Printf("集群信息: %+v\n", clusterInfo)
+		fmt.Printf("cluster info: %+v\n", clusterInfo)
 	}
 
-	fmt.Println("\n=== 获取 Topic 列表 ===")
+	fmt.Println("\n=== get topic list ===")
 	topicList, err := client.FetchAllTopicList(ctx)
 	if err != nil {
-		log.Printf("获取 Topic 列表失败: %v", err)
+		log.Printf("failed to get topic list: %v", err)
 	} else {
-		fmt.Printf("Topic 数量: %d\n", len(topicList.TopicList))
+		fmt.Printf("topics: %d\n", len(topicList.TopicList))
 		for i, topic := range topicList.TopicList {
 			if i >= 10 {
-				fmt.Printf("  ... 还有 %d 个 Topic\n", len(topicList.TopicList)-10)
+				fmt.Printf("  ... and %d more topics\n", len(topicList.TopicList)-10)
 				break
 			}
 			fmt.Printf("  - %s\n", topic)
 		}
 	}
 
-	fmt.Println("\n=== NameServer 地址 ===")
+	fmt.Println("\n=== NameServer addresses ===")
 	nameServers := client.GetNameServerAddressList()
 	for _, ns := range nameServers {
 		fmt.Printf("  - %s\n", ns)

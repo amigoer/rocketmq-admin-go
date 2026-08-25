@@ -18,27 +18,27 @@ func TestIntegration_PutAndGetKVConfig(t *testing.T) {
 
 	err := client.PutKVConfig(ctx, namespace, key, value)
 	if err != nil {
-		t.Logf("存储 KV 配置失败: %v", err)
+		t.Logf("failed to store KV config: %v", err)
 		return
 	}
 
-	t.Logf("存储 KV 配置成功: %s/%s = %s", namespace, key, value)
+	t.Logf("stored KV config: %s/%s = %s", namespace, key, value)
 
 	gotValue, err := client.GetKVConfig(ctx, namespace, key)
 	if err != nil {
-		t.Logf("获取 KV 配置失败: %v", err)
+		t.Logf("failed to get KV config: %v", err)
 	} else {
-		t.Logf("获取 KV 配置成功: %s", gotValue)
+		t.Logf("got KV config: %s", gotValue)
 		if gotValue != value {
-			t.Errorf("KV 值不匹配: got %s, want %s", gotValue, value)
+			t.Errorf("KV value mismatch: got %s, want %s", gotValue, value)
 		}
 	}
 
 	err = client.DeleteKVConfig(ctx, namespace, key)
 	if err != nil {
-		t.Logf("删除 KV 配置失败: %v", err)
+		t.Logf("failed to delete KV config: %v", err)
 	} else {
-		t.Logf("删除 KV 配置成功")
+		t.Logf("deleted KV config")
 	}
 }
 
@@ -64,11 +64,11 @@ func TestIntegration_GetKVListByNamespace(t *testing.T) {
 
 	kvList, err := client.GetKVListByNamespace(ctx, namespace)
 	if err != nil {
-		t.Logf("获取 KV 列表失败: %v", err)
+		t.Logf("failed to get KV list: %v", err)
 		return
 	}
 
-	t.Logf("命名空间 %s 的 KV 数量: %d", namespace, len(kvList))
+	t.Logf("KV entries in namespace %s: %d", namespace, len(kvList))
 	for k, v := range kvList {
 		t.Logf("  %s = %s", k, v)
 	}
@@ -89,14 +89,14 @@ func TestIntegration_DeleteKVConfig(t *testing.T) {
 
 	err := client.DeleteKVConfig(ctx, namespace, key)
 	if err != nil {
-		t.Logf("删除 KV 配置失败: %v", err)
+		t.Logf("failed to delete KV config: %v", err)
 	} else {
-		t.Log("删除 KV 配置成功")
+		t.Log("deleted KV config")
 	}
 
 	_, err = client.GetKVConfig(ctx, namespace, key)
 	if err != nil {
-		t.Log("验证 KV 已删除")
+		t.Log("verified the KV entry is gone")
 	}
 }
 
@@ -113,7 +113,7 @@ func TestIntegration_CreateAndUpdateKVConfig(t *testing.T) {
 
 	err := client.CreateAndUpdateKVConfig(ctx, namespace, key, "initial_value")
 	if err != nil {
-		t.Logf("创建 KV 配置失败: %v", err)
+		t.Logf("failed to create KV config: %v", err)
 		return
 	}
 	defer func() {
@@ -122,16 +122,16 @@ func TestIntegration_CreateAndUpdateKVConfig(t *testing.T) {
 
 	err = client.CreateAndUpdateKVConfig(ctx, namespace, key, "updated_value")
 	if err != nil {
-		t.Logf("更新 KV 配置失败: %v", err)
+		t.Logf("failed to update KV config: %v", err)
 	} else {
-		t.Log("更新 KV 配置成功")
+		t.Log("updated KV config")
 	}
 
 	value, err := client.GetKVConfig(ctx, namespace, key)
 	if err != nil {
-		t.Logf("获取更新后的 KV 失败: %v", err)
+		t.Logf("failed to read the updated KV entry: %v", err)
 	} else {
-		t.Logf("更新后的值: %s", value)
+		t.Logf("updated value: %s", value)
 	}
 }
 
@@ -149,9 +149,9 @@ func TestIntegration_CreateOrUpdateOrderConf(t *testing.T) {
 
 	err := client.CreateOrUpdateOrderConf(ctx, key, value, namespace)
 	if err != nil {
-		t.Logf("创建顺序配置失败: %v", err)
+		t.Logf("failed to create order config: %v", err)
 	} else {
-		t.Log("创建顺序配置成功")
+		t.Log("created order config")
 		_ = client.DeleteKVConfig(ctx, namespace, key)
 	}
 }

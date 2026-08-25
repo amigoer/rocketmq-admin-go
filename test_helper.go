@@ -29,11 +29,11 @@ func getTestClient(t *testing.T) *Client {
 		WithTimeout(testTimeout),
 	)
 	if err != nil {
-		t.Fatalf("创建测试客户端失败: %v", err)
+		t.Fatalf("failed to create test client: %v", err)
 	}
 
 	if err := client.Start(); err != nil {
-		t.Fatalf("启动测试客户端失败: %v", err)
+		t.Fatalf("failed to start test client: %v", err)
 	}
 
 	return client
@@ -42,7 +42,7 @@ func getTestClient(t *testing.T) *Client {
 // skipIfNoRocketMQ skips the test unless a reachable RocketMQ cluster is configured.
 func skipIfNoRocketMQ(t *testing.T) {
 	if os.Getenv("ROCKETMQ_TEST_SKIP") == "true" {
-		t.Skip("跳过 RocketMQ 集成测试 (ROCKETMQ_TEST_SKIP=true)")
+		t.Skip("skipping RocketMQ integration tests (ROCKETMQ_TEST_SKIP=true)")
 	}
 
 	client, err := NewClient(
@@ -50,12 +50,12 @@ func skipIfNoRocketMQ(t *testing.T) {
 		WithTimeout(3*time.Second),
 	)
 	if err != nil {
-		t.Skipf("跳过测试: 无法创建客户端: %v", err)
+		t.Skipf("skipping: cannot create a client: %v", err)
 	}
 	defer client.Close()
 
 	if err := client.Start(); err != nil {
-		t.Skipf("跳过测试: 无法启动客户端: %v", err)
+		t.Skipf("skipping: cannot start the client: %v", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -64,7 +64,7 @@ func skipIfNoRocketMQ(t *testing.T) {
 	// FetchAllTopicList is a more reliable liveness probe than ExamineBrokerClusterInfo.
 	_, err = client.FetchAllTopicList(ctx)
 	if err != nil {
-		t.Skipf("跳过测试: RocketMQ 不可用: %v", err)
+		t.Skipf("skipping: RocketMQ is not reachable: %v", err)
 	}
 }
 

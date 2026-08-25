@@ -14,7 +14,7 @@ func TestIntegration_ExamineProducerConnectionInfo(t *testing.T) {
 
 	topicList, err := client.FetchAllTopicList(ctx)
 	if err != nil {
-		t.Fatalf("获取 Topic 列表失败: %v", err)
+		t.Fatalf("failed to get topic list: %v", err)
 	}
 
 	var testTopic string
@@ -27,20 +27,20 @@ func TestIntegration_ExamineProducerConnectionInfo(t *testing.T) {
 	}
 
 	if testTopic == "" {
-		t.Skip("没有可用的测试 Topic")
+		t.Skip("no usable test topic")
 	}
 
 	producerGroup := "DEFAULT_PRODUCER"
 	connInfo, err := client.ExamineProducerConnectionInfo(ctx, producerGroup, testTopic)
 	if err != nil {
-		t.Logf("查询生产者连接信息失败（可能没有在线生产者）: %v", err)
+		t.Logf("failed to query producer connections (there may be no online producer): %v", err)
 		return
 	}
 
-	t.Logf("生产者组 %s 连接信息:", producerGroup)
-	t.Logf("  连接数: %d", len(connInfo.ConnectionSet))
+	t.Logf("producer group %s connections:", producerGroup)
+	t.Logf("  connections: %d", len(connInfo.ConnectionSet))
 	for _, conn := range connInfo.ConnectionSet {
-		t.Logf("  客户端: %s, 地址: %s", conn.ClientId, conn.ClientAddr)
+		t.Logf("  client: %s, addr: %s", conn.ClientId, conn.ClientAddr)
 	}
 }
 
@@ -54,7 +54,7 @@ func TestIntegration_GetAllProducerInfo(t *testing.T) {
 
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		t.Fatalf("获取集群信息失败: %v", err)
+		t.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var brokerAddr string
@@ -69,20 +69,20 @@ func TestIntegration_GetAllProducerInfo(t *testing.T) {
 	}
 
 	if brokerAddr == "" {
-		t.Fatal("未找到可用的 Broker 地址")
+		t.Fatal("no usable Broker address found")
 	}
 
 	producerInfo, err := client.GetAllProducerInfo(ctx, brokerAddr)
 	if err != nil {
-		t.Logf("获取所有生产者信息失败: %v", err)
+		t.Logf("failed to get all producer info: %v", err)
 		return
 	}
 
-	t.Logf("生产者组数量: %d", len(producerInfo))
+	t.Logf("producer groups: %d", len(producerInfo))
 	for group, connections := range producerInfo {
-		t.Logf("生产者组 %s: %d 个连接", group, len(connections))
+		t.Logf("producer group %s: %d connections", group, len(connections))
 		for _, conn := range connections {
-			t.Logf("  客户端: %s, 地址: %s", conn.ClientId, conn.ClientAddr)
+			t.Logf("  client: %s, addr: %s", conn.ClientId, conn.ClientAddr)
 		}
 	}
 }

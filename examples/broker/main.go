@@ -19,26 +19,26 @@ func main() {
 		admin.WithTimeout(3*time.Second),
 	)
 	if err != nil {
-		log.Fatalf("创建客户端失败: %v", err)
+		log.Fatalf("failed to create client: %v", err)
 	}
 
 	if err := client.Start(); err != nil {
-		log.Fatalf("启动客户端失败: %v", err)
+		log.Fatalf("failed to start client: %v", err)
 	}
 	defer client.Close()
 
 	ctx := context.Background()
 
 	// Cluster info is what yields a Broker address to talk to.
-	fmt.Println("=== 获取集群信息 ===")
+	fmt.Println("=== get cluster info ===")
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		log.Fatalf("获取集群信息失败: %v", err)
+		log.Fatalf("failed to get cluster info: %v", err)
 	}
 
 	var targetBrokerAddr string
 	for name, brokerData := range clusterInfo.BrokerAddrTable {
-		fmt.Printf("发现 Broker: %s\n", name)
+		fmt.Printf("found Broker: %s\n", name)
 		if addr, ok := brokerData.BrokerAddrs["0"]; ok { // broker id "0" is the master
 			targetBrokerAddr = addr
 			break
@@ -46,13 +46,13 @@ func main() {
 	}
 
 	if targetBrokerAddr == "" {
-		log.Fatalf("未找到可用的 Broker Master")
+		log.Fatalf("no usable Broker master found")
 	}
 
-	fmt.Printf("\n=== 获取 Broker Runtime 统计 (%s) ===\n", targetBrokerAddr)
+	fmt.Printf("\n=== Broker runtime stats (%s) ===\n", targetBrokerAddr)
 	kvTable, err := client.FetchBrokerRuntimeStats(ctx, targetBrokerAddr)
 	if err != nil {
-		log.Printf("获取统计失败: %v", err)
+		log.Printf("failed to get stats: %v", err)
 	} else {
 		keys := []string{"brokerVersionDesc", "msgPutTotalTodayNow", "msgGetTotalTodayNow"}
 		for _, k := range keys {
@@ -62,10 +62,10 @@ func main() {
 		}
 	}
 
-	fmt.Printf("\n=== 获取 Broker 配置 (%s) ===\n", targetBrokerAddr)
+	fmt.Printf("\n=== Broker config (%s) ===\n", targetBrokerAddr)
 	config, err := client.GetBrokerConfig(ctx, targetBrokerAddr)
 	if err != nil {
-		log.Printf("获取配置失败: %v", err)
+		log.Printf("failed to get config: %v", err)
 	} else {
 		fmt.Printf("brokerName: %s\n", config["brokerName"])
 		fmt.Printf("brokerId: %s\n", config["brokerId"])
@@ -74,13 +74,13 @@ func main() {
 
 	// Updating config is left commented out so that running this example
 	// cannot change the reader's Broker.
-	// fmt.Println("\n=== 更新 Broker 配置 ===")
+	// fmt.Println("\n=== update Broker config ===")
 	// newConfig := map[string]string{
 	// 	"fileReservedTime": "48",
 	// }
 	// if err := client.UpdateBrokerConfig(ctx, targetBrokerAddr, newConfig); err != nil {
-	// 	log.Printf("更新配置失败: %v", err)
+	// 	log.Printf("failed to update config: %v", err)
 	// } else {
-	// 	fmt.Println("更新配置成功")
+	// 	fmt.Println("config updated")
 	// }
 }
