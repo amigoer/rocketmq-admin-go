@@ -47,7 +47,9 @@ graph LR
 | **Security**      | 5.x RBAC (users and ACL rules), 4.x `plain_acl.yml`, global IP allowlist           |
 | **Advanced**      | KV config, Controller management (5.x), cold-data throttling, RocksDB tuning       |
 
-The full interface table lives in [docs/interfaces.md](./docs/interfaces.md).
+Coming from the Java admin API? [docs/interfaces.md](./docs/interfaces.md) maps
+`MQAdminExt` onto this one. The full method list is on
+[pkg.go.dev](https://pkg.go.dev/github.com/amigoer/rocketmq-admin-go#Client).
 
 ## Install
 

@@ -47,7 +47,8 @@ graph LR
 | **权限安全**   | 5.x RBAC（用户与 ACL 规则）+ 4.x `plain_acl.yml`、全局 IP 白名单   |
 | **高级功能**   | KV 配置、Controller 管理（5.x）、冷数据流控、RocksDB 调优          |
 
-完整的接口对照表见 [docs/interfaces.md](./docs/interfaces.md)。
+从 Java 的 `MQAdminExt` 迁过来的话，[docs/interfaces.md](./docs/interfaces.md) 列出了两边的
+对应关系；完整方法列表见 [pkg.go.dev](https://pkg.go.dev/github.com/amigoer/rocketmq-admin-go#Client)。
 
 ## 安装
 
