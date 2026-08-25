@@ -37,7 +37,7 @@ func (c *Client) GetControllerMetaData(ctx context.Context, controllerAddr strin
 
 	var meta ControllerMetaData
 	if err := json.Unmarshal(resp.Body, &meta); err != nil {
-		return nil, fmt.Errorf("解析 Controller 元数据失败: %w", err)
+		return nil, fmt.Errorf("failed to parse controller metadata: %w", err)
 	}
 
 	return &meta, nil

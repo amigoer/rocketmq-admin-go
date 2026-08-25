@@ -33,7 +33,7 @@ func defaultOptions() *Options {
 
 func (o *Options) validate() error {
 	if len(o.NameServers) == 0 {
-		return errors.New("NameServers 不能为空")
+		return errors.New("NameServers must not be empty")
 	}
 	return nil
 }

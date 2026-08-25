@@ -39,12 +39,12 @@ func (c *Client) CreateTopic(ctx context.Context, addr string, config TopicConfi
 func (c *Client) DeleteTopic(ctx context.Context, topicName, clusterName string) error {
 	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
-		return fmt.Errorf("获取集群信息失败: %w", err)
+		return fmt.Errorf("failed to get cluster info: %w", err)
 	}
 
 	brokerNames, ok := clusterInfo.ClusterAddrTable[clusterName]
 	if !ok {
-		return fmt.Errorf("集群 %s 不存在", clusterName)
+		return fmt.Errorf("cluster %s does not exist", clusterName)
 	}
 
 	for _, brokerName := range brokerNames {
@@ -61,7 +61,7 @@ func (c *Client) DeleteTopic(ctx context.Context, topicName, clusterName string)
 			cmd := remoting.NewRequest(remoting.DeleteTopicInBroker, extFields)
 
 			if _, err := c.invokeBroker(ctx, masterAddr, cmd); err != nil {
-				return fmt.Errorf("在 Broker %s 删除 Topic 失败: %w", brokerName, err)
+				return fmt.Errorf("failed to delete topic on Broker %s: %w", brokerName, err)
 			}
 		}
 	}
@@ -72,7 +72,7 @@ func (c *Client) DeleteTopic(ctx context.Context, topicName, clusterName string)
 	cmd := remoting.NewRequest(remoting.DeleteTopicInNamesrv, extFields)
 
 	if _, err := c.invokeNameServer(ctx, cmd); err != nil {
-		return fmt.Errorf("在 NameServer 删除 Topic 失败: %w", err)
+		return fmt.Errorf("failed to delete topic on NameServer: %w", err)
 	}
 
 	return nil
@@ -93,7 +93,7 @@ func (c *Client) FetchAllTopicList(ctx context.Context) (*TopicList, error) {
 
 	var topicList TopicList
 	if err := json.Unmarshal(resp.Body, &topicList); err != nil {
-		return nil, fmt.Errorf("解析 Topic 列表失败: %w", err)
+		return nil, fmt.Errorf("failed to parse topic list: %w", err)
 	}
 
 	return &topicList, nil
@@ -117,7 +117,7 @@ func (c *Client) FetchTopicsByCluster(ctx context.Context, clusterName string) (
 
 	var topicList TopicList
 	if err := json.Unmarshal(resp.Body, &topicList); err != nil {
-		return nil, fmt.Errorf("解析 Topic 列表失败: %w", err)
+		return nil, fmt.Errorf("failed to parse topic list: %w", err)
 	}
 
 	return &topicList, nil
@@ -148,7 +148,7 @@ func (c *Client) ExamineTopicRouteInfo(ctx context.Context, topic string) (*Topi
 
 	var routeData TopicRouteData
 	if err := json.Unmarshal(fixedBody, &routeData); err != nil {
-		return nil, fmt.Errorf("解析 Topic 路由失败: %w", err)
+		return nil, fmt.Errorf("failed to parse topic route: %w", err)
 	}
 
 	// Record name-to-address pairs so later requests to these Brokers carry bname.
@@ -195,7 +195,7 @@ func (c *Client) ExamineTopicStats(ctx context.Context, topic string) (*TopicSta
 
 	var statsTable TopicStatsTable
 	if err := json.Unmarshal(fixedBody, &statsTable); err != nil {
-		return nil, fmt.Errorf("解析 Topic 统计失败: %w", err)
+		return nil, fmt.Errorf("failed to parse topic stats: %w", err)
 	}
 
 	return &statsTable, nil
@@ -258,7 +258,7 @@ func (c *Client) ExamineTopicConfig(ctx context.Context, brokerAddr, topic strin
 
 	var config TopicConfig
 	if err := json.Unmarshal(resp.Body, &config); err != nil {
-		return nil, fmt.Errorf("解析 Topic 配置失败: %w", err)
+		return nil, fmt.Errorf("failed to parse topic config: %w", err)
 	}
 
 	return &config, nil
@@ -301,7 +301,7 @@ func (c *Client) QueryTopicConsumeByWho(ctx context.Context, topic string) ([]st
 		GroupList []string `json:"groupList"`
 	}
 	if err := json.Unmarshal(resp.Body, &groups); err != nil {
-		return nil, fmt.Errorf("解析消费组列表失败: %w", err)
+		return nil, fmt.Errorf("failed to parse consumer group list: %w", err)
 	}
 
 	return groups.GroupList, nil
@@ -324,7 +324,7 @@ func (c *Client) GetAllTopicConfig(ctx context.Context, brokerAddr string) (map[
 		TopicConfigTable map[string]*TopicConfig `json:"topicConfigTable"`
 	}
 	if err := json.Unmarshal(resp.Body, &wrapper); err != nil {
-		return nil, fmt.Errorf("解析 Topic 配置失败: %w", err)
+		return nil, fmt.Errorf("failed to parse topic config: %w", err)
 	}
 
 	return wrapper.TopicConfigTable, nil
@@ -335,7 +335,7 @@ func (c *Client) GetAllTopicConfig(ctx context.Context, brokerAddr string) (map[
 func (c *Client) CreateAndUpdateTopicConfigList(ctx context.Context, brokerAddr string, configs []TopicConfig) error {
 	for _, config := range configs {
 		if err := c.CreateTopic(ctx, brokerAddr, config); err != nil {
-			return fmt.Errorf("创建 Topic %s 失败: %w", config.TopicName, err)
+			return fmt.Errorf("failed to create topic %s: %w", config.TopicName, err)
 		}
 	}
 	return nil

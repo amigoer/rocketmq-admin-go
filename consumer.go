@@ -75,7 +75,7 @@ func (c *Client) ExamineSubscriptionGroupConfig(ctx context.Context, addr, group
 
 	var config SubscriptionGroupConfig
 	if err := json.Unmarshal(resp.Body, &config); err != nil {
-		return nil, fmt.Errorf("解析订阅组配置失败: %w", err)
+		return nil, fmt.Errorf("failed to parse subscription group config: %w", err)
 	}
 
 	return &config, nil
@@ -248,7 +248,7 @@ func (c *Client) FetchConsumeStatsInBroker(ctx context.Context, brokerAddr strin
 
 	var result ConsumeStatsList
 	if err := json.Unmarshal(fixJSONBody(resp.Body), &result); err != nil {
-		return nil, fmt.Errorf("解析 Broker 消费统计失败: %w", err)
+		return nil, fmt.Errorf("failed to parse Broker consume stats: %w", err)
 	}
 
 	return &result, nil
@@ -295,7 +295,7 @@ func (c *Client) QuerySubscription(ctx context.Context, consumerGroup, topic str
 		return &sub, nil
 	}
 
-	return nil, fmt.Errorf("未找到消费者组 %s 对 Topic %s 的订阅信息", consumerGroup, topic)
+	return nil, fmt.Errorf("no subscription found for consumer group %s on topic %s", consumerGroup, topic)
 }
 
 // GetConsumeStatus returns each client's per-queue offsets for a consumer group.
@@ -434,7 +434,7 @@ func (c *Client) GetConsumerRunningInfo(ctx context.Context, consumerGroup, clie
 	}
 
 	if targetConn == nil {
-		return nil, fmt.Errorf("客户端 %s 未找到", clientId)
+		return nil, fmt.Errorf("client %s not found", clientId)
 	}
 
 	extFields := map[string]string{
@@ -474,7 +474,7 @@ func (c *Client) GetConsumerRunningInfo(ctx context.Context, consumerGroup, clie
 		return &runningInfo, nil
 	}
 
-	return nil, fmt.Errorf("获取消费者运行信息失败")
+	return nil, fmt.Errorf("failed to get consumer running info")
 }
 
 // QueryTopicsByConsumer returns the topics a consumer group subscribes to.
@@ -495,7 +495,7 @@ func (c *Client) QueryTopicsByConsumer(ctx context.Context, consumerGroup string
 
 	var topicList TopicList
 	if err := json.Unmarshal(resp.Body, &topicList); err != nil {
-		return nil, fmt.Errorf("解析 Topic 列表失败: %w", err)
+		return nil, fmt.Errorf("failed to parse topic list: %w", err)
 	}
 
 	return &topicList, nil
@@ -560,7 +560,7 @@ func (c *Client) GetAllSubscriptionGroup(ctx context.Context, brokerAddr string)
 		SubscriptionGroupTable map[string]*SubscriptionGroupConfig `json:"subscriptionGroupTable"`
 	}
 	if err := json.Unmarshal(resp.Body, &wrapper); err != nil {
-		return nil, fmt.Errorf("解析订阅组列表失败: %w", err)
+		return nil, fmt.Errorf("failed to parse subscription group list: %w", err)
 	}
 
 	return wrapper.SubscriptionGroupTable, nil
@@ -650,7 +650,7 @@ func isSystemGroup(groupName string) bool {
 func (c *Client) CloneGroupOffset(ctx context.Context, srcGroup, destGroup, topic string, isOffline bool) error {
 	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
-		return fmt.Errorf("获取 Topic 路由信息失败: %w", err)
+		return fmt.Errorf("failed to get topic route info: %w", err)
 	}
 
 	for _, brokerData := range routeData.BrokerDatas {
@@ -669,7 +669,7 @@ func (c *Client) CloneGroupOffset(ctx context.Context, srcGroup, destGroup, topi
 
 		resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
 		if err != nil {
-			return fmt.Errorf("克隆偏移到 %s 失败: %w", brokerAddr, err)
+			return fmt.Errorf("failed to clone offsets to %s: %w", brokerAddr, err)
 		}
 		if resp.Code != remoting.Success {
 			return NewAdminError(resp.Code, resp.Remark)
@@ -727,7 +727,7 @@ type ColdDataFlowCtrInfo struct {
 func (c *Client) UpdateColdDataFlowCtrGroupConfig(ctx context.Context, brokerAddr string, config ColdDataFlowCtrConfig) error {
 	body, err := json.Marshal(config)
 	if err != nil {
-		return fmt.Errorf("序列化冷数据流控配置失败: %w", err)
+		return fmt.Errorf("failed to marshal cold data flow control config: %w", err)
 	}
 
 	cmd := remoting.NewRequest(remoting.UpdateColdDataFlowCtrGroupConfig, nil)
@@ -779,7 +779,7 @@ func (c *Client) GetColdDataFlowCtrInfo(ctx context.Context, brokerAddr string) 
 
 	var infos []ColdDataFlowCtrInfo
 	if err := json.Unmarshal(resp.Body, &infos); err != nil {
-		return nil, fmt.Errorf("解析冷数据流控信息失败: %w", err)
+		return nil, fmt.Errorf("failed to parse cold data flow control info: %w", err)
 	}
 
 	return infos, nil
@@ -795,7 +795,7 @@ func (c *Client) UpdateColdDataFlowCtrGroupConfigInCluster(ctx context.Context, 
 
 	brokerNames, ok := clusterInfo.ClusterAddrTable[clusterName]
 	if !ok {
-		return fmt.Errorf("集群 %s 不存在", clusterName)
+		return fmt.Errorf("cluster %s does not exist", clusterName)
 	}
 
 	for _, brokerName := range brokerNames {
@@ -806,7 +806,7 @@ func (c *Client) UpdateColdDataFlowCtrGroupConfigInCluster(ctx context.Context, 
 
 		for _, brokerAddr := range brokerData.BrokerAddrs {
 			if err := c.UpdateColdDataFlowCtrGroupConfig(ctx, brokerAddr, config); err != nil {
-				return fmt.Errorf("更新 %s 冷数据流控失败: %w", brokerAddr, err)
+				return fmt.Errorf("failed to update cold data flow control on %s: %w", brokerAddr, err)
 			}
 		}
 	}

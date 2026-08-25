@@ -109,7 +109,7 @@ func (c *Client) invokeNameServer(ctx context.Context, cmd *remoting.RemotingCom
 	}
 
 	if lastErr != nil {
-		return nil, fmt.Errorf("所有 NameServer 请求失败: %w", lastErr)
+		return nil, fmt.Errorf("all NameServer requests failed: %w", lastErr)
 	}
 	return nil, ErrConnectionFailed
 }
@@ -118,7 +118,7 @@ func (c *Client) invokeNameServer(ctx context.Context, cmd *remoting.RemotingCom
 func (c *Client) invokeBroker(ctx context.Context, brokerAddr string, cmd *remoting.RemotingCommand) (*remoting.RemotingCommand, error) {
 	conn, err := c.pool.GetOrCreate(brokerAddr)
 	if err != nil {
-		return nil, fmt.Errorf("连接 Broker 失败: %w", err)
+		return nil, fmt.Errorf("failed to connect to Broker: %w", err)
 	}
 
 	// A RocketMQ Proxy needs bname to know which Broker to forward to.
@@ -133,7 +133,7 @@ func (c *Client) invokeBroker(ctx context.Context, brokerAddr string, cmd *remot
 	resp, err := conn.InvokeSync(ctx, cmd)
 	if err != nil {
 		c.pool.Remove(brokerAddr)
-		return nil, fmt.Errorf("请求 Broker 失败: %w", err)
+		return nil, fmt.Errorf("Broker request failed: %w", err)
 	}
 
 	return resp, nil

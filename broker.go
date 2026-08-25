@@ -23,7 +23,7 @@ func (c *Client) FetchBrokerRuntimeStats(ctx context.Context, brokerAddr string)
 
 	var kvTable KVTable
 	if err := json.Unmarshal(resp.Body, &kvTable); err != nil {
-		return nil, fmt.Errorf("解析 Broker 运行信息失败: %w", err)
+		return nil, fmt.Errorf("failed to parse Broker runtime info: %w", err)
 	}
 
 	return &kvTable, nil
@@ -148,7 +148,7 @@ func (c *Client) ViewBrokerStatsData(ctx context.Context, brokerAddr, statsName,
 
 	var stats BrokerStatsData
 	if err := json.Unmarshal(resp.Body, &stats); err != nil {
-		return nil, fmt.Errorf("解析统计数据失败: %w", err)
+		return nil, fmt.Errorf("failed to parse stats data: %w", err)
 	}
 
 	return &stats, nil
@@ -169,7 +169,7 @@ func (c *Client) GetBrokerHAStatus(ctx context.Context, brokerAddr string) (*Bro
 
 	var status BrokerHAStatus
 	if err := json.Unmarshal(resp.Body, &status); err != nil {
-		return nil, fmt.Errorf("解析 HA 状态失败: %w", err)
+		return nil, fmt.Errorf("failed to parse HA status: %w", err)
 	}
 
 	return &status, nil
@@ -247,7 +247,7 @@ func (c *Client) GetBrokerEpochCache(ctx context.Context, brokerAddr string) (*B
 
 	var info BrokerEpochInfo
 	if err := json.Unmarshal(resp.Body, &info); err != nil {
-		return nil, fmt.Errorf("解析 Epoch 缓存失败: %w", err)
+		return nil, fmt.Errorf("failed to parse epoch cache: %w", err)
 	}
 
 	return &info, nil

@@ -17,7 +17,7 @@ import (
 func (c *Client) CreateUser(ctx context.Context, brokerAddr string, user UserInfo) error {
 	body, err := json.Marshal(user)
 	if err != nil {
-		return fmt.Errorf("序列化用户信息失败: %w", err)
+		return fmt.Errorf("failed to marshal user info: %w", err)
 	}
 
 	cmd := remoting.NewRequest(remoting.CreateUser, nil)
@@ -39,7 +39,7 @@ func (c *Client) CreateUser(ctx context.Context, brokerAddr string, user UserInf
 func (c *Client) UpdateUser(ctx context.Context, brokerAddr string, user UserInfo) error {
 	body, err := json.Marshal(user)
 	if err != nil {
-		return fmt.Errorf("序列化用户信息失败: %w", err)
+		return fmt.Errorf("failed to marshal user info: %w", err)
 	}
 
 	cmd := remoting.NewRequest(remoting.UpdateUser, nil)
@@ -94,7 +94,7 @@ func (c *Client) GetUser(ctx context.Context, brokerAddr, username string) (*Use
 
 	var user UserInfo
 	if err := json.Unmarshal(resp.Body, &user); err != nil {
-		return nil, fmt.Errorf("解析用户信息失败: %w", err)
+		return nil, fmt.Errorf("failed to parse user info: %w", err)
 	}
 
 	return &user, nil
@@ -115,7 +115,7 @@ func (c *Client) ListUser(ctx context.Context, brokerAddr string) (*UserList, er
 
 	var users UserList
 	if err := json.Unmarshal(resp.Body, &users); err != nil {
-		return nil, fmt.Errorf("解析用户列表失败: %w", err)
+		return nil, fmt.Errorf("failed to parse user list: %w", err)
 	}
 
 	return &users, nil
@@ -125,7 +125,7 @@ func (c *Client) ListUser(ctx context.Context, brokerAddr string) (*UserList, er
 func (c *Client) CreateAcl(ctx context.Context, brokerAddr string, acl AclInfo) error {
 	body, err := json.Marshal(acl)
 	if err != nil {
-		return fmt.Errorf("序列化 ACL 信息失败: %w", err)
+		return fmt.Errorf("failed to marshal ACL info: %w", err)
 	}
 
 	cmd := remoting.NewRequest(remoting.CreateAcl, nil)
@@ -147,7 +147,7 @@ func (c *Client) CreateAcl(ctx context.Context, brokerAddr string, acl AclInfo) 
 func (c *Client) UpdateAcl(ctx context.Context, brokerAddr string, acl AclInfo) error {
 	body, err := json.Marshal(acl)
 	if err != nil {
-		return fmt.Errorf("序列化 ACL 信息失败: %w", err)
+		return fmt.Errorf("failed to marshal ACL info: %w", err)
 	}
 
 	cmd := remoting.NewRequest(remoting.UpdateAcl, nil)
@@ -202,7 +202,7 @@ func (c *Client) GetAcl(ctx context.Context, brokerAddr, subject string) (*AclIn
 
 	var acl AclInfo
 	if err := json.Unmarshal(resp.Body, &acl); err != nil {
-		return nil, fmt.Errorf("解析 ACL 信息失败: %w", err)
+		return nil, fmt.Errorf("failed to parse ACL info: %w", err)
 	}
 
 	return &acl, nil
@@ -223,7 +223,7 @@ func (c *Client) ListAcl(ctx context.Context, brokerAddr string) (*AclList, erro
 
 	var acls AclList
 	if err := json.Unmarshal(resp.Body, &acls); err != nil {
-		return nil, fmt.Errorf("解析 ACL 列表失败: %w", err)
+		return nil, fmt.Errorf("failed to parse ACL list: %w", err)
 	}
 
 	return &acls, nil

@@ -43,7 +43,7 @@ func (c *Client) Connect() error {
 
 	conn, err := net.DialTimeout("tcp", c.addr, c.timeout)
 	if err != nil {
-		return fmt.Errorf("连接服务器失败: %w", err)
+		return fmt.Errorf("failed to connect to server: %w", err)
 	}
 
 	c.conn = conn
@@ -122,7 +122,7 @@ func (c *Client) InvokeOneway(cmd *RemotingCommand) error {
 func (c *Client) send(cmd *RemotingCommand) error {
 	data, err := cmd.Encode()
 	if err != nil {
-		return fmt.Errorf("编码命令失败: %w", err)
+		return fmt.Errorf("failed to encode command: %w", err)
 	}
 
 	c.mu.RLock()
@@ -135,7 +135,7 @@ func (c *Client) send(cmd *RemotingCommand) error {
 
 	_, err = conn.Write(data)
 	if err != nil {
-		return fmt.Errorf("发送数据失败: %w", err)
+		return fmt.Errorf("failed to send data: %w", err)
 	}
 
 	return nil

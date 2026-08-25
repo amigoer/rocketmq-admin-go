@@ -41,7 +41,7 @@ func (p *ConnectionPool) GetOrCreate(addr string) (*Client, error) {
 
 	client = NewClient(addr, p.timeout)
 	if err := client.Connect(); err != nil {
-		return nil, fmt.Errorf("连接 %s 失败: %w", addr, err)
+		return nil, fmt.Errorf("failed to connect to %s: %w", addr, err)
 	}
 
 	p.connections[addr] = client

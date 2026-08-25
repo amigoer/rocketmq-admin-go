@@ -26,7 +26,7 @@ func (c *Client) ExamineBrokerClusterInfo(ctx context.Context) (*ClusterInfo, er
 
 	var clusterInfo ClusterInfo
 	if err := json.Unmarshal(fixedBody, &clusterInfo); err != nil {
-		return nil, fmt.Errorf("解析集群信息失败: %w", err)
+		return nil, fmt.Errorf("failed to parse cluster info: %w", err)
 	}
 
 	c.rememberClusterBrokerNames(&clusterInfo)

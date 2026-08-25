@@ -47,7 +47,7 @@ func (c *Client) QueryConsumeQueue(ctx context.Context, brokerAddr, topic string
 		QueueData []ConsumeQueueData `json:"queueData"`
 	}
 	if err := json.Unmarshal(resp.Body, &wrapper); err != nil {
-		return nil, fmt.Errorf("解析消费队列数据失败: %w", err)
+		return nil, fmt.Errorf("failed to parse consume queue data: %w", err)
 	}
 
 	return wrapper.QueueData, nil
@@ -102,7 +102,7 @@ func (c *Client) ConsumeMessageDirectly(ctx context.Context, consumerGroup, clie
 		return &result, nil
 	}
 
-	return nil, fmt.Errorf("消费消息失败")
+	return nil, fmt.Errorf("consume message failed")
 }
 
 // ResumeCheckHalfMessage retriggers the transaction check on a half message.
@@ -135,7 +135,7 @@ func (c *Client) ResumeCheckHalfMessage(ctx context.Context, topic, msgId string
 		}
 	}
 
-	return false, fmt.Errorf("恢复半消息失败")
+	return false, fmt.Errorf("resume half message failed")
 }
 
 // SetMessageRequestMode switches a topic/group between pull and pop consumption.
@@ -164,12 +164,12 @@ func (c *Client) SetMessageRequestMode(ctx context.Context, brokerAddr, topic, c
 // message's topic, whether that group consumed it.
 func (c *Client) MessageTrackDetail(ctx context.Context, msg *MessageExt) ([]MessageTrack, error) {
 	if msg == nil {
-		return nil, fmt.Errorf("消息不能为空")
+		return nil, fmt.Errorf("message must not be nil")
 	}
 
 	groups, err := c.QueryTopicConsumeByWho(ctx, msg.Topic)
 	if err != nil {
-		return nil, fmt.Errorf("查询 Topic 消费者失败: %w", err)
+		return nil, fmt.Errorf("failed to query topic consumers: %w", err)
 	}
 
 	var tracks []MessageTrack
@@ -250,7 +250,7 @@ func (c *Client) SearchOffset(ctx context.Context, brokerAddr, topic string, que
 		}
 	}
 
-	return 0, fmt.Errorf("解析偏移结果失败: 响应中未包含 offset 字段")
+	return 0, fmt.Errorf("failed to parse offset result: response has no offset field")
 }
 
 // PullMessageResult is one batch of pulled messages plus the queue's bounds.
@@ -330,7 +330,7 @@ func (c *Client) PullMessage(ctx context.Context, brokerAddr, topic string, queu
 func (c *Client) QueryMessageByTime(ctx context.Context, topic string, beginTime, endTime int64, maxNum int) ([]*MessageExt, error) {
 	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
-		return nil, fmt.Errorf("获取 Topic 路由信息失败: %w", err)
+		return nil, fmt.Errorf("failed to get topic route info: %w", err)
 	}
 
 	if maxNum <= 0 {
@@ -363,7 +363,7 @@ func (c *Client) QueryMessageByTime(ctx context.Context, topic string, beginTime
 	}
 
 	if len(queues) == 0 {
-		return nil, fmt.Errorf("未找到可用的消息队列")
+		return nil, fmt.Errorf("no usable message queue found")
 	}
 
 	// Pull each queue concurrently.
@@ -546,5 +546,5 @@ func (c *Client) ViewMessage(ctx context.Context, topic, msgId string) (*Message
 		}
 	}
 
-	return nil, fmt.Errorf("未找到消息: %s", msgId)
+	return nil, fmt.Errorf("message not found: %s", msgId)
 }

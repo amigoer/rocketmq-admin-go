@@ -50,7 +50,7 @@ func (c *Client) ExamineProducerConnectionInfo(ctx context.Context, producerGrou
 		return &connInfo, nil
 	}
 
-	return nil, fmt.Errorf("未找到生产者组 %s 的连接信息", producerGroup)
+	return nil, fmt.Errorf("no connection info found for producer group %s", producerGroup)
 }
 
 // GetAllProducerInfo returns every producer group connected to one Broker.
@@ -68,7 +68,7 @@ func (c *Client) GetAllProducerInfo(ctx context.Context, brokerAddr string) (map
 
 	result := make(map[string][]Connection)
 	if err := json.Unmarshal(resp.Body, &result); err != nil {
-		return nil, fmt.Errorf("解析生产者信息失败: %w", err)
+		return nil, fmt.Errorf("failed to parse producer info: %w", err)
 	}
 
 	return result, nil

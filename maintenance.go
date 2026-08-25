@@ -17,7 +17,7 @@ func (c *Client) CleanExpiredConsumerQueue(ctx context.Context, clusterName stri
 
 	brokerNames, ok := clusterInfo.ClusterAddrTable[clusterName]
 	if !ok {
-		return fmt.Errorf("集群 %s 不存在", clusterName)
+		return fmt.Errorf("cluster %s does not exist", clusterName)
 	}
 
 	for _, brokerName := range brokerNames {
@@ -61,7 +61,7 @@ func (c *Client) DeleteExpiredCommitLog(ctx context.Context, clusterName string)
 
 	brokerNames, ok := clusterInfo.ClusterAddrTable[clusterName]
 	if !ok {
-		return fmt.Errorf("集群 %s 不存在", clusterName)
+		return fmt.Errorf("cluster %s does not exist", clusterName)
 	}
 
 	for _, brokerName := range brokerNames {
@@ -105,7 +105,7 @@ func (c *Client) CleanUnusedTopic(ctx context.Context, clusterName string) error
 
 	brokerNames, ok := clusterInfo.ClusterAddrTable[clusterName]
 	if !ok {
-		return fmt.Errorf("集群 %s 不存在", clusterName)
+		return fmt.Errorf("cluster %s does not exist", clusterName)
 	}
 
 	for _, brokerName := range brokerNames {
@@ -170,7 +170,7 @@ func (c *Client) SetCommitLogReadAheadModeInCluster(ctx context.Context, cluster
 
 	brokerNames, ok := clusterInfo.ClusterAddrTable[clusterName]
 	if !ok {
-		return fmt.Errorf("集群 %s 不存在", clusterName)
+		return fmt.Errorf("cluster %s does not exist", clusterName)
 	}
 
 	for _, brokerName := range brokerNames {
@@ -181,7 +181,7 @@ func (c *Client) SetCommitLogReadAheadModeInCluster(ctx context.Context, cluster
 
 		for _, brokerAddr := range brokerData.BrokerAddrs {
 			if err := c.SetCommitLogReadAheadMode(ctx, brokerAddr, mode); err != nil {
-				return fmt.Errorf("设置 %s 预读模式失败: %w", brokerAddr, err)
+				return fmt.Errorf("failed to set read-ahead mode on %s: %w", brokerAddr, err)
 			}
 		}
 	}
@@ -242,7 +242,7 @@ func (c *Client) CheckRocksdbCqWriteProgress(ctx context.Context, brokerAddr, to
 
 	var progress []RocksDBCQWriteProgress
 	if err := json.Unmarshal(resp.Body, &progress); err != nil {
-		return nil, fmt.Errorf("解析 RocksDB CQ 写入进度失败: %w", err)
+		return nil, fmt.Errorf("failed to parse RocksDB CQ write progress: %w", err)
 	}
 
 	return progress, nil

@@ -102,7 +102,7 @@ func (c *Client) GetKVListByNamespace(ctx context.Context, namespace string) (ma
 
 	result := make(map[string]string)
 	if err := json.Unmarshal(resp.Body, &result); err != nil {
-		return nil, fmt.Errorf("解析 KV 列表失败: %w", err)
+		return nil, fmt.Errorf("failed to parse KV list: %w", err)
 	}
 
 	return result, nil
