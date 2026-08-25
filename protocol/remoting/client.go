@@ -193,6 +193,6 @@ func (c *Client) readLoop() {
 }
 
 var (
-	ErrNotConnected     = &RemotingError{Message: "未连接"}
-	ErrConnectionClosed = &RemotingError{Message: "连接已关闭"}
+	ErrNotConnected     = &RemotingError{Message: "not connected"}
+	ErrConnectionClosed = &RemotingError{Message: "connection closed"}
 )

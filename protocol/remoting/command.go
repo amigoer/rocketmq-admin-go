@@ -128,7 +128,7 @@ func Decode(data []byte) (*RemotingCommand, error) {
 }
 
 var (
-	ErrInvalidData = &RemotingError{Message: "无效数据"}
+	ErrInvalidData = &RemotingError{Message: "invalid data"}
 )
 
 // RemotingError is a protocol-level failure.
