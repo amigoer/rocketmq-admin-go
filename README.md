@@ -1,7 +1,7 @@
 <div align="center">
   <img src="docs/logo.png" width="512" alt="RocketMQ Admin Go Logo">
   <h1>RocketMQ Admin Go</h1>
-  <p><strong>Apache RocketMQ 的 Go 运维管理客户端</strong></p>
+  <p><strong>An admin client for Apache RocketMQ, written in Go</strong></p>
 
   <p>
     <a href="https://pkg.go.dev/github.com/amigoer/rocketmq-admin-go">
@@ -15,47 +15,49 @@
     </a>
     <img src="https://img.shields.io/badge/RocketMQ-4.x%20%2F%205.x-brightgreen" alt="RocketMQ Version">
   </p>
+
+  <p><b>English</b> | <a href="README_zh.md">简体中文</a></p>
 </div>
 
-## 这是什么
+## What it is
 
-官方的 [rocketmq-client-go](https://github.com/apache/rocketmq-client-go) 解决了消息的**生产和消费**，但没有提供运维管理能力 —— 建 Topic、查消费进度、重置位点、管权限这些事，在 Go 里一直只能靠拼 shell 调 Java 版 `mqadmin`。
+The official [rocketmq-client-go](https://github.com/apache/rocketmq-client-go) covers **producing and consuming** messages, but stops there. Creating a topic, checking how far a consumer group has fallen behind, resetting an offset, granting a permission — from Go, all of that has meant shelling out to the Java `mqadmin`.
 
-本项目补上这一半：把 Java 版 `MQAdminExt` 的运维接口用 Go 重新实现，`Client` 上提供 106 个方法，并与 `rocketmq-client-go` **共用同一份配置**。
+This project fills in the other half. It reimplements the admin surface of Java's `MQAdminExt` in Go, exposing 106 methods on `Client`, and it **shares a single configuration** with `rocketmq-client-go`.
 
 ```mermaid
 graph LR
-    App["你的应用 / 运维平台"] --> Config["admin.Config"]
-    Config --> Admin["Admin 客户端<br/>(本项目)"]
+    App["Your app / ops platform"] --> Config["admin.Config"]
+    Config --> Admin["Admin client<br/>(this project)"]
     Config --> PC["Producer / Consumer<br/>(rocketmq-client-go)"]
-    Admin --> Remoting["Remoting 协议层"]
+    Admin --> Remoting["Remoting protocol"]
     Remoting --> Cluster["NameServer / Broker / Controller"]
     PC --> Cluster
 ```
 
-## 特性
+## Features
 
-| 模块           | 能力                                                               |
-| :------------- | :----------------------------------------------------------------- |
-| **配置共享**   | 一份 `Config` 同时产出 Admin 客户端与 Producer / Consumer          |
-| **集群运维**   | 集群拓扑、Broker 运行时统计与配置、NameServer 配置                 |
-| **Topic 管理** | 创建 / 删除、路由与统计查询、静态 Topic、读写权限控制              |
-| **消费者管理** | 订阅组增删改查、消费进度与积压、在线客户端、按时间戳重置位点       |
-| **消息操作**   | 按 Key / ID / 时间范围查询、消费轨迹、直接消费、半消息恢复         |
-| **权限安全**   | 5.x RBAC（用户与 ACL 规则）+ 4.x `plain_acl.yml`、全局 IP 白名单   |
-| **高级功能**   | KV 配置、Controller 管理（5.x）、冷数据流控、RocksDB 调优          |
+| Area              | What it covers                                                                     |
+| :---------------- | :--------------------------------------------------------------------------------- |
+| **Shared config** | One `Config` produces both the admin client and a Producer / Consumer              |
+| **Cluster ops**   | Cluster topology, Broker runtime stats and configuration, NameServer configuration |
+| **Topics**        | Create and delete, route and stats queries, static topics, read/write permissions  |
+| **Consumers**     | Subscription groups, consume progress and backlog, online clients, offset reset    |
+| **Messages**      | Query by key, id or time range; consume tracking, direct consumption, half messages |
+| **Security**      | 5.x RBAC (users and ACL rules), 4.x `plain_acl.yml`, global IP allowlist           |
+| **Advanced**      | KV config, Controller management (5.x), cold-data throttling, RocksDB tuning       |
 
-完整的接口对照表见 [docs/interfaces.md](./docs/interfaces.md)。
+The full interface table lives in [docs/interfaces.md](./docs/interfaces.md).
 
-## 安装
+## Install
 
 ```bash
 go get github.com/amigoer/rocketmq-admin-go@latest
 ```
 
-需要 Go 1.25 或更高版本。
+Requires Go 1.25 or newer.
 
-## 快速开始
+## Quick start
 
 ```go
 package main
@@ -69,7 +71,7 @@ import (
 )
 
 func main() {
-	// 配置只写一次
+	// Configure once
 	cfg := admin.NewConfig("127.0.0.1:9876").
 		WithCredentials("accessKey", "secretKey")
 
@@ -90,13 +92,13 @@ func main() {
 		fmt.Printf("%s: %v\n", name, brokers)
 	}
 
-	// 同一份 cfg 直接产出 rocketmq-client-go 的收发客户端
+	// The same cfg hands you rocketmq-client-go's messaging clients
 	// producer, _ := cfg.NewProducer()
 	// consumer, _ := cfg.NewPushConsumer(consumer.WithGroupName("my-group"))
 }
 ```
 
-不需要收发消息时，也可以跳过 `Config` 直接建客户端：
+If you do not need to send or receive messages, skip `Config` and build the client directly:
 
 ```go
 client, err := admin.NewClient(
@@ -105,11 +107,11 @@ client, err := admin.NewClient(
 )
 ```
 
-按主题划分的可运行示例在 [examples/](./examples) 目录，逐个接口的用法见 [pkg.go.dev](https://pkg.go.dev/github.com/amigoer/rocketmq-admin-go)。
+Runnable examples grouped by topic are in [examples/](./examples); per-method documentation is on [pkg.go.dev](https://pkg.go.dev/github.com/amigoer/rocketmq-admin-go).
 
-## 设计要点
+## Design notes
 
-**协议层零第三方依赖。** RocketMQ Remoting 协议用标准库直接实现（`net` + `encoding/binary` + `encoding/json`），没有引入任何网络框架：
+**No third-party networking.** The RocketMQ Remoting protocol is implemented directly on the standard library (`net` + `encoding/binary` + `encoding/json`):
 
 ```text
 +----------------+----------------+---------------------+----------------+
@@ -118,26 +120,26 @@ client, err := admin.NewClient(
 +----------------+----------------+---------------------+----------------+
 ```
 
-**同时支持 4.x 和 5.x。** 两代差异较大的部分都做了覆盖：5.x 的 RBAC 权限模型与 Controller 模式，4.x 基于 `plain_acl.yml` 的旧版 ACL。
+**Both 4.x and 5.x.** The places where the two generations diverge are covered on both sides: 5.x brings the RBAC permission model and Controller mode, while 4.x keeps the older `plain_acl.yml` ACL.
 
-**能穿过 Proxy。** RocketMQ 5.x 的 Proxy 转发请求前需要知道目标 Broker 名称，客户端会从路由和集群信息中自动学习并补上 `bname` 请求头，调用方无需关心连的是 Proxy 还是 Broker。
+**Works through a Proxy.** A RocketMQ 5.x Proxy must know the target Broker's name before it can forward a request. The client learns Broker names from route and cluster information and fills in the `bname` header itself, so callers never need to know whether they are talking to a Proxy or a Broker.
 
-**响应容错。** RocketMQ 会返回若干非标准 JSON（无引号的数字键、Fastjson 的对象键 Map），解析前统一做了修正。
+**Tolerates non-standard JSON.** RocketMQ answers with JSON no standard parser accepts — unquoted numeric keys, Fastjson maps whose keys are objects. Responses are repaired before unmarshalling.
 
-协议细节见 [docs/rocketmq_protocol.md](./docs/rocketmq_protocol.md)。
+Protocol details are in [docs/rocketmq_protocol.md](./docs/rocketmq_protocol.md).
 
-## 贡献
+## Contributing
 
-欢迎提交 [Issue](https://github.com/amigoer/rocketmq-admin-go/issues) 或 [Pull Request](https://github.com/amigoer/rocketmq-admin-go/pulls)。
+[Issues](https://github.com/amigoer/rocketmq-admin-go/issues) and [pull requests](https://github.com/amigoer/rocketmq-admin-go/pulls) are welcome.
 
-集成测试需要一个可达的 RocketMQ 集群：
+The integration tests need a reachable RocketMQ cluster:
 
 ```bash
 ROCKETMQ_NAMESRV_ADDR=127.0.0.1:9876 go test ./...
 ```
 
-没有集群时会自动跳过，也可以用 `ROCKETMQ_TEST_SKIP=true` 强制跳过。
+They skip themselves when no cluster is reachable; `ROCKETMQ_TEST_SKIP=true` forces the skip.
 
-## 许可证
+## License
 
 [Apache-2.0](./LICENSE) — Copyright (c) 2026 Amigoer
