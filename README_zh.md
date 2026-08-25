@@ -56,7 +56,7 @@ graph LR
 go get github.com/amigoer/rocketmq-admin-go@latest
 ```
 
-需要 Go 1.25 或更高版本。
+需要 Go 1.23 或更高版本。
 
 ## 快速开始
 

@@ -1,6 +1,8 @@
 module github.com/amigoer/rocketmq-admin-go
 
-go 1.25.0
+go 1.23.0
+
+toolchain go1.23.12
 
 require github.com/apache/rocketmq-client-go/v2 v2.1.2
 
@@ -18,7 +20,7 @@ require (
 	github.com/tidwall/match v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	stathat.com/c/consistent v1.0.0 // indirect
 )

@@ -57,7 +57,7 @@ Coming from the Java admin API? [docs/interfaces.md](./docs/interfaces.md) maps
 go get github.com/amigoer/rocketmq-admin-go@latest
 ```
 
-Requires Go 1.25 or newer.
+Requires Go 1.23 or newer.
 
 ## Quick start
 
