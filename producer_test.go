@@ -4,11 +4,6 @@ import (
 	"testing"
 )
 
-// =============================================================================
-// 生产者管理接口集成测试
-// =============================================================================
-
-// TestIntegration_ExamineProducerConnectionInfo 测试查询生产者连接信息
 func TestIntegration_ExamineProducerConnectionInfo(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -17,7 +12,6 @@ func TestIntegration_ExamineProducerConnectionInfo(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Topic 列表
 	topicList, err := client.FetchAllTopicList(ctx)
 	if err != nil {
 		t.Fatalf("获取 Topic 列表失败: %v", err)
@@ -36,7 +30,6 @@ func TestIntegration_ExamineProducerConnectionInfo(t *testing.T) {
 		t.Skip("没有可用的测试 Topic")
 	}
 
-	// 尝试查询生产者连接信息
 	producerGroup := "DEFAULT_PRODUCER"
 	connInfo, err := client.ExamineProducerConnectionInfo(ctx, producerGroup, testTopic)
 	if err != nil {
@@ -51,7 +44,6 @@ func TestIntegration_ExamineProducerConnectionInfo(t *testing.T) {
 	}
 }
 
-// TestIntegration_GetAllProducerInfo 测试获取所有生产者信息
 func TestIntegration_GetAllProducerInfo(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -60,7 +52,6 @@ func TestIntegration_GetAllProducerInfo(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)

@@ -4,11 +4,6 @@ import (
 	"testing"
 )
 
-// =============================================================================
-// 消费者管理接口集成测试
-// =============================================================================
-
-// TestIntegration_CreateAndDeleteSubscriptionGroup 测试创建和删除订阅组
 func TestIntegration_CreateAndDeleteSubscriptionGroup(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -17,7 +12,6 @@ func TestIntegration_CreateAndDeleteSubscriptionGroup(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -38,7 +32,6 @@ func TestIntegration_CreateAndDeleteSubscriptionGroup(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 创建测试订阅组
 	groupName := getTestGroupName("CREATE")
 	config := SubscriptionGroupConfig{
 		GroupName:                      groupName,
@@ -58,7 +51,6 @@ func TestIntegration_CreateAndDeleteSubscriptionGroup(t *testing.T) {
 		t.Fatalf("创建订阅组失败: %v", err)
 	}
 
-	// 验证创建成功
 	groupConfig, err := client.ExamineSubscriptionGroupConfig(ctx, brokerAddr, groupName)
 	if err != nil {
 		t.Logf("查询订阅组配置失败（可能是接口问题）: %v", err)
@@ -67,7 +59,6 @@ func TestIntegration_CreateAndDeleteSubscriptionGroup(t *testing.T) {
 			groupConfig.GroupName, groupConfig.ConsumeEnable)
 	}
 
-	// 删除订阅组
 	t.Logf("删除订阅组: %s", groupName)
 	err = client.DeleteSubscriptionGroup(ctx, brokerAddr, groupName)
 	if err != nil {
@@ -75,7 +66,6 @@ func TestIntegration_CreateAndDeleteSubscriptionGroup(t *testing.T) {
 	}
 }
 
-// TestIntegration_GetAllSubscriptionGroup 测试获取所有订阅组
 func TestIntegration_GetAllSubscriptionGroup(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -84,7 +74,6 @@ func TestIntegration_GetAllSubscriptionGroup(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -112,7 +101,6 @@ func TestIntegration_GetAllSubscriptionGroup(t *testing.T) {
 
 	t.Logf("订阅组数量: %d", len(groups))
 
-	// 打印部分订阅组
 	count := 0
 	for name, config := range groups {
 		if count >= 5 {
@@ -124,7 +112,6 @@ func TestIntegration_GetAllSubscriptionGroup(t *testing.T) {
 	}
 }
 
-// TestIntegration_GetUserSubscriptionGroup 测试获取用户订阅组（过滤系统组）
 func TestIntegration_GetUserSubscriptionGroup(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -133,7 +120,6 @@ func TestIntegration_GetUserSubscriptionGroup(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -166,7 +152,6 @@ func TestIntegration_GetUserSubscriptionGroup(t *testing.T) {
 	}
 }
 
-// TestIntegration_ExamineConsumeStats 测试查询消费统计
 func TestIntegration_ExamineConsumeStats(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -175,7 +160,6 @@ func TestIntegration_ExamineConsumeStats(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -196,13 +180,11 @@ func TestIntegration_ExamineConsumeStats(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 获取所有订阅组
 	groups, err := client.GetAllSubscriptionGroup(ctx, brokerAddr)
 	if err != nil {
 		t.Fatalf("获取订阅组失败: %v", err)
 	}
 
-	// 对第一个用户组查询消费统计
 	for groupName := range groups {
 		stats, err := client.ExamineConsumeStats(ctx, groupName)
 		if err != nil {
@@ -223,7 +205,6 @@ func TestIntegration_ExamineConsumeStats(t *testing.T) {
 	t.Log("没有可查询消费统计的消费组")
 }
 
-// TestIntegration_ExamineConsumerConnectionInfo 测试查询消费者连接信息
 func TestIntegration_ExamineConsumerConnectionInfo(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -232,7 +213,6 @@ func TestIntegration_ExamineConsumerConnectionInfo(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -253,13 +233,11 @@ func TestIntegration_ExamineConsumerConnectionInfo(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 获取所有订阅组
 	groups, err := client.GetAllSubscriptionGroup(ctx, brokerAddr)
 	if err != nil {
 		t.Fatalf("获取订阅组失败: %v", err)
 	}
 
-	// 尝试查询连接信息
 	for groupName := range groups {
 		connInfo, err := client.ExamineConsumerConnectionInfo(ctx, groupName)
 		if err == ErrConsumerGroupNotFound {
@@ -283,7 +261,6 @@ func TestIntegration_ExamineConsumerConnectionInfo(t *testing.T) {
 	t.Log("没有在线的消费者")
 }
 
-// TestIntegration_QueryTopicsByConsumer 测试查询消费者订阅的 Topic
 func TestIntegration_QueryTopicsByConsumer(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -292,7 +269,6 @@ func TestIntegration_QueryTopicsByConsumer(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -313,13 +289,11 @@ func TestIntegration_QueryTopicsByConsumer(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 获取所有订阅组
 	groups, err := client.GetAllSubscriptionGroup(ctx, brokerAddr)
 	if err != nil {
 		t.Fatalf("获取订阅组失败: %v", err)
 	}
 
-	// 尝试查询订阅的 Topic
 	for groupName := range groups {
 		topicList, err := client.QueryTopicsByConsumer(ctx, groupName)
 		if err != nil {
@@ -335,7 +309,6 @@ func TestIntegration_QueryTopicsByConsumer(t *testing.T) {
 	t.Log("没有找到有订阅 Topic 的消费组")
 }
 
-// TestIntegration_UpdateConsumeOffset 测试更新消费 Offset
 func TestIntegration_UpdateConsumeOffset(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -344,7 +317,6 @@ func TestIntegration_UpdateConsumeOffset(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -365,7 +337,6 @@ func TestIntegration_UpdateConsumeOffset(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 创建测试订阅组
 	groupName := getTestGroupName("OFFSET")
 	config := SubscriptionGroupConfig{
 		GroupName:     groupName,
@@ -380,7 +351,6 @@ func TestIntegration_UpdateConsumeOffset(t *testing.T) {
 		_ = client.DeleteSubscriptionGroup(ctx, brokerAddr, groupName)
 	}()
 
-	// 获取一个 Topic
 	topicList, err := client.FetchAllTopicList(ctx)
 	if err != nil {
 		t.Fatalf("获取 Topic 列表失败: %v", err)
@@ -398,7 +368,6 @@ func TestIntegration_UpdateConsumeOffset(t *testing.T) {
 		t.Skip("没有可用的测试 Topic")
 	}
 
-	// 更新 Offset
 	err = client.UpdateConsumeOffset(ctx, brokerAddr, groupName, testTopic, 0, 100)
 	if err != nil {
 		t.Logf("更新消费 Offset 失败（可能是 Topic 不存在于此 Broker）: %v", err)
@@ -407,7 +376,6 @@ func TestIntegration_UpdateConsumeOffset(t *testing.T) {
 	}
 }
 
-// TestIntegration_ResetOffsetByTimestamp 测试按时间戳重置消费位点
 func TestIntegration_ResetOffsetByTimestamp(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -416,7 +384,6 @@ func TestIntegration_ResetOffsetByTimestamp(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -437,13 +404,11 @@ func TestIntegration_ResetOffsetByTimestamp(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 获取所有订阅组
 	groups, err := client.GetAllSubscriptionGroup(ctx, brokerAddr)
 	if err != nil {
 		t.Fatalf("获取订阅组失败: %v", err)
 	}
 
-	// 获取 Topic 列表
 	topicList, err := client.FetchAllTopicList(ctx)
 	if err != nil {
 		t.Fatalf("获取 Topic 列表失败: %v", err)
@@ -461,7 +426,6 @@ func TestIntegration_ResetOffsetByTimestamp(t *testing.T) {
 		t.Skip("没有可用的测试 Topic")
 	}
 
-	// 尝试重置 Offset
 	for groupName := range groups {
 		result, err := client.ResetOffsetByTimestamp(ctx, testTopic, groupName, 0, false)
 		if err != nil {
@@ -475,7 +439,6 @@ func TestIntegration_ResetOffsetByTimestamp(t *testing.T) {
 	t.Log("没有可重置 Offset 的消费组")
 }
 
-// TestIntegration_QueryConsumeTimeSpan 测试查询消费时间跨度
 func TestIntegration_QueryConsumeTimeSpan(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -484,7 +447,6 @@ func TestIntegration_QueryConsumeTimeSpan(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -505,7 +467,6 @@ func TestIntegration_QueryConsumeTimeSpan(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 获取订阅组和 Topic
 	groups, err := client.GetAllSubscriptionGroup(ctx, brokerAddr)
 	if err != nil {
 		t.Fatalf("获取订阅组失败: %v", err)
@@ -547,7 +508,6 @@ func TestIntegration_QueryConsumeTimeSpan(t *testing.T) {
 	t.Log("没有找到消费时间跨度数据")
 }
 
-// TestIntegration_GetConsumerRunningInfo 测试获取消费者运行时信息
 func TestIntegration_GetConsumerRunningInfo(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -556,7 +516,6 @@ func TestIntegration_GetConsumerRunningInfo(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -577,7 +536,6 @@ func TestIntegration_GetConsumerRunningInfo(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 获取订阅组
 	groups, err := client.GetAllSubscriptionGroup(ctx, brokerAddr)
 	if err != nil {
 		t.Fatalf("获取订阅组失败: %v", err)
@@ -600,7 +558,6 @@ func TestIntegration_GetConsumerRunningInfo(t *testing.T) {
 	t.Log("没有在线的消费者")
 }
 
-// TestIntegration_ColdDataFlowCtr 测试冷数据流控
 func TestIntegration_ColdDataFlowCtr(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -609,7 +566,6 @@ func TestIntegration_ColdDataFlowCtr(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -630,7 +586,6 @@ func TestIntegration_ColdDataFlowCtr(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 获取冷数据流控信息
 	infos, err := client.GetColdDataFlowCtrInfo(ctx, brokerAddr)
 	if err != nil {
 		t.Logf("获取冷数据流控信息失败（可能不支持）: %v", err)
@@ -644,7 +599,6 @@ func TestIntegration_ColdDataFlowCtr(t *testing.T) {
 	}
 }
 
-// TestIntegration_UpdateColdDataFlowCtrGroupConfig 测试更新冷数据流控配置
 func TestIntegration_UpdateColdDataFlowCtrGroupConfig(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -653,7 +607,6 @@ func TestIntegration_UpdateColdDataFlowCtrGroupConfig(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -674,7 +627,6 @@ func TestIntegration_UpdateColdDataFlowCtrGroupConfig(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 创建测试订阅组
 	groupName := getTestGroupName("COLDDATA")
 	subConfig := SubscriptionGroupConfig{
 		GroupName:     groupName,
@@ -689,7 +641,6 @@ func TestIntegration_UpdateColdDataFlowCtrGroupConfig(t *testing.T) {
 		_ = client.DeleteSubscriptionGroup(ctx, brokerAddr, groupName)
 	}()
 
-	// 更新冷数据流控配置
 	config := ColdDataFlowCtrConfig{
 		ConsumerGroup:   groupName,
 		ThresholdPerSec: 1000,
@@ -705,14 +656,12 @@ func TestIntegration_UpdateColdDataFlowCtrGroupConfig(t *testing.T) {
 
 	t.Logf("更新冷数据流控配置成功")
 
-	// 移除配置
 	err = client.RemoveColdDataFlowCtrGroupConfig(ctx, brokerAddr, groupName)
 	if err != nil {
 		t.Logf("移除冷数据流控配置失败: %v", err)
 	}
 }
 
-// TestIntegration_CloneGroupOffset 测试克隆消费组偏移
 func TestIntegration_CloneGroupOffset(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -721,7 +670,6 @@ func TestIntegration_CloneGroupOffset(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -742,7 +690,6 @@ func TestIntegration_CloneGroupOffset(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 创建源和目标订阅组
 	srcGroup := getTestGroupName("SRC")
 	destGroup := getTestGroupName("DEST")
 
@@ -756,7 +703,6 @@ func TestIntegration_CloneGroupOffset(t *testing.T) {
 		_ = client.DeleteSubscriptionGroup(ctx, brokerAddr, destGroup)
 	}()
 
-	// 获取 Topic
 	topicList, err := client.FetchAllTopicList(ctx)
 	if err != nil {
 		t.Fatalf("获取 Topic 列表失败: %v", err)
@@ -774,7 +720,6 @@ func TestIntegration_CloneGroupOffset(t *testing.T) {
 		t.Skip("没有可用的测试 Topic")
 	}
 
-	// 克隆 Offset
 	err = client.CloneGroupOffset(ctx, srcGroup, destGroup, testTopic, false)
 	if err != nil {
 		t.Logf("克隆 Offset 失败（可能是源组没有消费数据）: %v", err)
@@ -783,7 +728,6 @@ func TestIntegration_CloneGroupOffset(t *testing.T) {
 	}
 }
 
-// TestIntegration_UpdateAndGetGroupReadForbidden 测试更新并获取组读取禁止状态
 func TestIntegration_UpdateAndGetGroupReadForbidden(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -792,7 +736,6 @@ func TestIntegration_UpdateAndGetGroupReadForbidden(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -813,7 +756,6 @@ func TestIntegration_UpdateAndGetGroupReadForbidden(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 创建测试订阅组
 	groupName := getTestGroupName("FORBID")
 	config := SubscriptionGroupConfig{GroupName: groupName, ConsumeEnable: true}
 
@@ -825,7 +767,6 @@ func TestIntegration_UpdateAndGetGroupReadForbidden(t *testing.T) {
 		_ = client.DeleteSubscriptionGroup(ctx, brokerAddr, groupName)
 	}()
 
-	// 禁止读取
 	forbidden, err := client.UpdateAndGetGroupReadForbidden(ctx, brokerAddr, groupName, "", true)
 	if err != nil {
 		t.Logf("更新读取禁止状态失败: %v", err)
@@ -833,7 +774,6 @@ func TestIntegration_UpdateAndGetGroupReadForbidden(t *testing.T) {
 		t.Logf("读取禁止状态: %v", forbidden)
 	}
 
-	// 恢复读取
 	_, err = client.UpdateAndGetGroupReadForbidden(ctx, brokerAddr, groupName, "", false)
 	if err != nil {
 		t.Logf("恢复读取状态失败: %v", err)

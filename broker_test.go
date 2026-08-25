@@ -4,11 +4,6 @@ import (
 	"testing"
 )
 
-// =============================================================================
-// Broker 管理接口集成测试
-// =============================================================================
-
-// TestIntegration_FetchBrokerRuntimeStats 测试获取 Broker 运行时统计信息
 func TestIntegration_FetchBrokerRuntimeStats(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -17,7 +12,6 @@ func TestIntegration_FetchBrokerRuntimeStats(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -49,7 +43,6 @@ func TestIntegration_FetchBrokerRuntimeStats(t *testing.T) {
 
 	t.Logf("Broker 运行时统计项数量: %d", len(stats.Table))
 
-	// 打印部分关键指标
 	keyMetrics := []string{
 		"brokerVersion",
 		"brokerVersionDesc",
@@ -67,7 +60,6 @@ func TestIntegration_FetchBrokerRuntimeStats(t *testing.T) {
 	}
 }
 
-// TestIntegration_GetBrokerConfig 测试获取 Broker 配置
 func TestIntegration_GetBrokerConfig(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -76,7 +68,6 @@ func TestIntegration_GetBrokerConfig(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -108,7 +99,6 @@ func TestIntegration_GetBrokerConfig(t *testing.T) {
 
 	t.Logf("Broker 配置项数量: %d", len(config))
 
-	// 打印关键配置项
 	keyConfigs := []string{
 		"brokerName",
 		"brokerId",
@@ -126,7 +116,6 @@ func TestIntegration_GetBrokerConfig(t *testing.T) {
 	}
 }
 
-// TestIntegration_UpdateBrokerConfig 测试更新 Broker 配置
 func TestIntegration_UpdateBrokerConfig(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -135,7 +124,6 @@ func TestIntegration_UpdateBrokerConfig(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -156,11 +144,9 @@ func TestIntegration_UpdateBrokerConfig(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 注意：更新配置可能需要特定权限，这里仅测试接口调用
-	// 使用一个相对安全的配置项
-	properties := map[string]string{
-		// 暂时不更新任何配置，仅验证接口调用
-	}
+	// Updating config can need elevated permissions, so send an empty property
+	// set: it exercises the call path without changing the Broker.
+	properties := map[string]string{}
 
 	if len(properties) == 0 {
 		t.Skip("跳过 Broker 配置更新测试：没有安全的测试配置项")
@@ -172,7 +158,6 @@ func TestIntegration_UpdateBrokerConfig(t *testing.T) {
 	}
 }
 
-// TestIntegration_WipeWritePermOfBroker 测试清除 Broker 写权限
 func TestIntegration_WipeWritePermOfBroker(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -181,7 +166,6 @@ func TestIntegration_WipeWritePermOfBroker(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 名称
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -197,24 +181,11 @@ func TestIntegration_WipeWritePermOfBroker(t *testing.T) {
 		t.Fatal("未找到可用的 Broker")
 	}
 
-	// 注意：此操作会影响 Broker 的正常工作，仅记录操作
+	// Wiping write permission would disrupt the Broker, so only log the call.
 	t.Logf("测试 WipeWritePermOfBroker (brokerName=%s) - 跳过实际执行以避免影响服务", brokerName)
 
-	// 如果确实需要测试，取消下面的注释
-	// count, err := client.WipeWritePermOfBroker(ctx, brokerName)
-	// if err != nil {
-	// 	t.Fatalf("清除 Broker 写权限失败: %v", err)
-	// }
-	// t.Logf("清除了 %d 个 Topic 的写权限", count)
-	//
-	// // 恢复写权限
-	// _, err = client.AddWritePermOfBroker(ctx, brokerName)
-	// if err != nil {
-	// 	t.Logf("恢复 Broker 写权限失败: %v", err)
-	// }
 }
 
-// TestIntegration_AddWritePermOfBroker 测试添加 Broker 写权限
 func TestIntegration_AddWritePermOfBroker(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -223,7 +194,6 @@ func TestIntegration_AddWritePermOfBroker(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 名称
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -242,7 +212,6 @@ func TestIntegration_AddWritePermOfBroker(t *testing.T) {
 	t.Logf("测试 AddWritePermOfBroker (brokerName=%s) - 跳过实际执行", brokerName)
 }
 
-// TestIntegration_ViewBrokerStatsData 测试查看 Broker 统计数据
 func TestIntegration_ViewBrokerStatsData(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -251,7 +220,6 @@ func TestIntegration_ViewBrokerStatsData(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -272,7 +240,6 @@ func TestIntegration_ViewBrokerStatsData(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 尝试查询常见的统计名称
 	statsNames := []string{
 		"TOPIC_PUT_NUMS",
 		"TOPIC_PUT_SIZE",
@@ -295,7 +262,6 @@ func TestIntegration_ViewBrokerStatsData(t *testing.T) {
 	t.Log("没有可查询的 Broker 统计数据")
 }
 
-// TestIntegration_GetBrokerHAStatus 测试获取 Broker HA 状态
 func TestIntegration_GetBrokerHAStatus(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -304,7 +270,6 @@ func TestIntegration_GetBrokerHAStatus(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -327,7 +292,6 @@ func TestIntegration_GetBrokerHAStatus(t *testing.T) {
 
 	status, err := client.GetBrokerHAStatus(ctx, brokerAddr)
 	if err != nil {
-		// HA 状态可能不是所有 Broker 都支持
 		t.Logf("获取 Broker HA 状态失败（可能不支持）: %v", err)
 		return
 	}
@@ -335,7 +299,6 @@ func TestIntegration_GetBrokerHAStatus(t *testing.T) {
 	t.Logf("Broker HA 状态: MasterAddr=%s", status.MasterAddr)
 }
 
-// TestIntegration_GetBrokerEpochCache 测试获取 Broker Epoch 缓存
 func TestIntegration_GetBrokerEpochCache(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -344,7 +307,6 @@ func TestIntegration_GetBrokerEpochCache(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -367,7 +329,6 @@ func TestIntegration_GetBrokerEpochCache(t *testing.T) {
 
 	epochInfo, err := client.GetBrokerEpochCache(ctx, brokerAddr)
 	if err != nil {
-		// Epoch 缓存可能不是所有版本都支持
 		t.Logf("获取 Broker Epoch 缓存失败（可能不支持）: %v", err)
 		return
 	}
@@ -376,13 +337,11 @@ func TestIntegration_GetBrokerEpochCache(t *testing.T) {
 		epochInfo.Epoch, epochInfo.MaxOffset, epochInfo.ConfirmOffset)
 }
 
-// TestIntegration_AddBrokerToContainer 测试添加 Broker 到容器
 func TestIntegration_AddBrokerToContainer(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	t.Skip("跳过 AddBrokerToContainer 测试：需要 Broker 容器环境")
 }
 
-// TestIntegration_RemoveBrokerFromContainer 测试从容器移除 Broker
 func TestIntegration_RemoveBrokerFromContainer(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	t.Skip("跳过 RemoveBrokerFromContainer 测试：需要 Broker 容器环境")

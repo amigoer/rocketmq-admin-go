@@ -39,7 +39,6 @@ func TestRemotingCommandEncodeDecode(t *testing.T) {
 	})
 	original.Body = []byte(`{"test": "data"}`)
 
-	// 编码
 	encoded, err := original.Encode()
 	if err != nil {
 		t.Fatalf("编码失败: %v", err)
@@ -49,7 +48,7 @@ func TestRemotingCommandEncodeDecode(t *testing.T) {
 		t.Fatal("编码数据太短")
 	}
 
-	// 解码（跳过前 4 字节的总长度）
+	// Decode expects the leading 4-byte total length to be stripped.
 	decoded, err := Decode(encoded[4:])
 	if err != nil {
 		t.Fatalf("解码失败: %v", err)
@@ -101,7 +100,6 @@ func TestConnectionPool(t *testing.T) {
 		t.Fatal("连接池不应为 nil")
 	}
 
-	// 测试关闭空池
 	if err := pool.Close(); err != nil {
 		t.Errorf("关闭空池失败: %v", err)
 	}

@@ -4,11 +4,6 @@ import (
 	"testing"
 )
 
-// =============================================================================
-// Controller 管理接口集成测试 (RocketMQ 5.x)
-// =============================================================================
-
-// TestIntegration_GetControllerMetaData 测试获取 Controller 元数据
 func TestIntegration_GetControllerMetaData(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -17,7 +12,7 @@ func TestIntegration_GetControllerMetaData(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// Controller 端口通常是 9878
+	// The controller listens on 9878 by default.
 	controllerAddr := "localhost:9878"
 
 	meta, err := client.GetControllerMetaData(ctx, controllerAddr)
@@ -33,7 +28,6 @@ func TestIntegration_GetControllerMetaData(t *testing.T) {
 	t.Logf("  ControllerAddrs 数量: %d", len(meta.ControllerAddrs))
 }
 
-// TestIntegration_GetControllerConfig 测试获取 Controller 配置
 func TestIntegration_GetControllerConfig(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -56,25 +50,21 @@ func TestIntegration_GetControllerConfig(t *testing.T) {
 	}
 }
 
-// TestIntegration_UpdateControllerConfig 测试更新 Controller 配置
 func TestIntegration_UpdateControllerConfig(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	t.Skip("跳过 UpdateControllerConfig 测试：避免影响 Controller 运行")
 }
 
-// TestIntegration_ElectMaster 测试选举 Master
 func TestIntegration_ElectMaster(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	t.Skip("跳过 ElectMaster 测试：此操作会影响集群")
 }
 
-// TestIntegration_CleanControllerBrokerData 测试清理 Controller Broker 数据
 func TestIntegration_CleanControllerBrokerData(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	t.Skip("跳过 CleanControllerBrokerData 测试：此操作会清理数据")
 }
 
-// TestIntegration_GetInSyncStateData 测试获取同步状态数据
 func TestIntegration_GetInSyncStateData(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -83,7 +73,6 @@ func TestIntegration_GetInSyncStateData(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取集群信息
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)

@@ -4,11 +4,6 @@ import (
 	"testing"
 )
 
-// =============================================================================
-// 维护管理接口集成测试
-// =============================================================================
-
-// TestIntegration_CleanExpiredConsumerQueueByAddr 测试清理过期消费队列
 func TestIntegration_CleanExpiredConsumerQueueByAddr(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -17,7 +12,6 @@ func TestIntegration_CleanExpiredConsumerQueueByAddr(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -46,7 +40,6 @@ func TestIntegration_CleanExpiredConsumerQueueByAddr(t *testing.T) {
 	}
 }
 
-// TestIntegration_CleanExpiredConsumerQueue 测试按集群清理过期消费队列
 func TestIntegration_CleanExpiredConsumerQueue(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -55,7 +48,6 @@ func TestIntegration_CleanExpiredConsumerQueue(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取集群名称
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -79,7 +71,6 @@ func TestIntegration_CleanExpiredConsumerQueue(t *testing.T) {
 	}
 }
 
-// TestIntegration_DeleteExpiredCommitLogByAddr 测试删除过期 CommitLog
 func TestIntegration_DeleteExpiredCommitLogByAddr(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -88,7 +79,6 @@ func TestIntegration_DeleteExpiredCommitLogByAddr(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -117,7 +107,6 @@ func TestIntegration_DeleteExpiredCommitLogByAddr(t *testing.T) {
 	}
 }
 
-// TestIntegration_DeleteExpiredCommitLog 测试按集群删除过期 CommitLog
 func TestIntegration_DeleteExpiredCommitLog(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -126,7 +115,6 @@ func TestIntegration_DeleteExpiredCommitLog(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取集群名称
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -150,7 +138,6 @@ func TestIntegration_DeleteExpiredCommitLog(t *testing.T) {
 	}
 }
 
-// TestIntegration_CleanUnusedTopicByAddr 测试清理未使用 Topic
 func TestIntegration_CleanUnusedTopicByAddr(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -159,7 +146,6 @@ func TestIntegration_CleanUnusedTopicByAddr(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -188,7 +174,6 @@ func TestIntegration_CleanUnusedTopicByAddr(t *testing.T) {
 	}
 }
 
-// TestIntegration_CleanUnusedTopic 测试按集群清理未使用 Topic
 func TestIntegration_CleanUnusedTopic(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -197,7 +182,6 @@ func TestIntegration_CleanUnusedTopic(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取集群名称
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -221,7 +205,6 @@ func TestIntegration_CleanUnusedTopic(t *testing.T) {
 	}
 }
 
-// TestIntegration_SetCommitLogReadAheadMode 测试设置 CommitLog 预读模式
 func TestIntegration_SetCommitLogReadAheadMode(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -230,7 +213,6 @@ func TestIntegration_SetCommitLogReadAheadMode(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -251,7 +233,6 @@ func TestIntegration_SetCommitLogReadAheadMode(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 设置为顺序预读模式
 	err = client.SetCommitLogReadAheadMode(ctx, brokerAddr, 1)
 	if err != nil {
 		t.Logf("设置 CommitLog 预读模式失败（可能不支持）: %v", err)
@@ -260,7 +241,6 @@ func TestIntegration_SetCommitLogReadAheadMode(t *testing.T) {
 	}
 }
 
-// TestIntegration_SetCommitLogReadAheadModeInCluster 测试按集群设置 CommitLog 预读模式
 func TestIntegration_SetCommitLogReadAheadModeInCluster(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -269,7 +249,6 @@ func TestIntegration_SetCommitLogReadAheadModeInCluster(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取集群名称
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -293,7 +272,6 @@ func TestIntegration_SetCommitLogReadAheadModeInCluster(t *testing.T) {
 	}
 }
 
-// TestIntegration_ExportRocksDBConfigToJson 测试导出 RocksDB 配置
 func TestIntegration_ExportRocksDBConfigToJson(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -302,7 +280,6 @@ func TestIntegration_ExportRocksDBConfigToJson(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -337,7 +314,6 @@ func TestIntegration_ExportRocksDBConfigToJson(t *testing.T) {
 	}
 }
 
-// TestIntegration_CheckRocksdbCqWriteProgress 测试检查 RocksDB CQ 写入进度
 func TestIntegration_CheckRocksdbCqWriteProgress(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -346,7 +322,6 @@ func TestIntegration_CheckRocksdbCqWriteProgress(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -367,7 +342,6 @@ func TestIntegration_CheckRocksdbCqWriteProgress(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 获取一个 Topic
 	topicList, err := client.FetchAllTopicList(ctx)
 	if err != nil {
 		t.Fatalf("获取 Topic 列表失败: %v", err)
@@ -398,4 +372,3 @@ func TestIntegration_CheckRocksdbCqWriteProgress(t *testing.T) {
 			p.Topic, p.QueueId, p.Progress, p.IsCompleted)
 	}
 }
-

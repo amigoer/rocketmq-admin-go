@@ -5,11 +5,6 @@ import (
 	"time"
 )
 
-// =============================================================================
-// Client 基础功能测试
-// =============================================================================
-
-// TestNewClient_Success 测试成功创建客户端
 func TestNewClient_Success(t *testing.T) {
 	client, err := NewClient(
 		WithNameServers([]string{"localhost:9876"}),
@@ -26,7 +21,6 @@ func TestNewClient_Success(t *testing.T) {
 	}
 }
 
-// TestNewClient_NoNameServer 测试缺少 NameServer 配置
 func TestNewClient_NoNameServer(t *testing.T) {
 	_, err := NewClient()
 	if err == nil {
@@ -34,7 +28,6 @@ func TestNewClient_NoNameServer(t *testing.T) {
 	}
 }
 
-// TestNewClient_WithACL 测试带 ACL 配置的客户端
 func TestNewClient_WithACL(t *testing.T) {
 	client, err := NewClient(
 		WithNameServers([]string{"localhost:9876"}),
@@ -50,7 +43,6 @@ func TestNewClient_WithACL(t *testing.T) {
 	}
 }
 
-// TestClient_StartAndClose 测试客户端生命周期
 func TestClient_StartAndClose(t *testing.T) {
 	client, err := NewClient(
 		WithNameServers([]string{"localhost:9876"}),
@@ -59,7 +51,6 @@ func TestClient_StartAndClose(t *testing.T) {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
 
-	// 测试初始状态
 	if client.IsStarted() {
 		t.Error("新创建的客户端不应处于已启动状态")
 	}
@@ -67,7 +58,6 @@ func TestClient_StartAndClose(t *testing.T) {
 		t.Error("新创建的客户端不应处于已关闭状态")
 	}
 
-	// 测试启动
 	if err := client.Start(); err != nil {
 		t.Fatalf("启动客户端失败: %v", err)
 	}
@@ -75,12 +65,10 @@ func TestClient_StartAndClose(t *testing.T) {
 		t.Error("启动后客户端应处于已启动状态")
 	}
 
-	// 测试重复启动
 	if err := client.Start(); err != ErrAlreadyStarted {
 		t.Errorf("重复启动应返回 ErrAlreadyStarted, got: %v", err)
 	}
 
-	// 测试关闭
 	if err := client.Close(); err != nil {
 		t.Fatalf("关闭客户端失败: %v", err)
 	}
@@ -88,13 +76,11 @@ func TestClient_StartAndClose(t *testing.T) {
 		t.Error("关闭后客户端应处于已关闭状态")
 	}
 
-	// 测试重复关闭（应该不返回错误）
 	if err := client.Close(); err != nil {
 		t.Errorf("重复关闭不应返回错误, got: %v", err)
 	}
 }
 
-// TestClient_StartAfterClose 测试关闭后启动
 func TestClient_StartAfterClose(t *testing.T) {
 	client, err := NewClient(
 		WithNameServers([]string{"localhost:9876"}),
@@ -103,18 +89,15 @@ func TestClient_StartAfterClose(t *testing.T) {
 		t.Fatalf("创建客户端失败: %v", err)
 	}
 
-	// 关闭客户端
 	if err := client.Close(); err != nil {
 		t.Fatalf("关闭客户端失败: %v", err)
 	}
 
-	// 尝试启动已关闭的客户端
 	if err := client.Start(); err != ErrClientClosed {
 		t.Errorf("启动已关闭的客户端应返回 ErrClientClosed, got: %v", err)
 	}
 }
 
-// TestClient_GetNameServerAddressList 测试获取 NameServer 地址列表
 func TestClient_GetNameServerAddressList(t *testing.T) {
 	expectedAddrs := []string{"localhost:9876", "localhost:9877"}
 	client, err := NewClient(

@@ -4,11 +4,6 @@ import (
 	"testing"
 )
 
-// =============================================================================
-// 消息管理接口集成测试
-// =============================================================================
-
-// TestIntegration_QueryConsumeQueue 测试查询消费队列
 func TestIntegration_QueryConsumeQueue(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -17,7 +12,6 @@ func TestIntegration_QueryConsumeQueue(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -38,7 +32,6 @@ func TestIntegration_QueryConsumeQueue(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 获取一个 Topic
 	topicList, err := client.FetchAllTopicList(ctx)
 	if err != nil {
 		t.Fatalf("获取 Topic 列表失败: %v", err)
@@ -60,7 +53,6 @@ func TestIntegration_QueryConsumeQueue(t *testing.T) {
 		t.Skip("没有可用的测试 Topic")
 	}
 
-	// 查询消费队列
 	queueData, err := client.QueryConsumeQueue(ctx, brokerAddr, testTopic, 0, 0, 10, "")
 	if err != nil {
 		t.Logf("查询消费队列失败（可能是队列为空）: %v", err)
@@ -77,7 +69,6 @@ func TestIntegration_QueryConsumeQueue(t *testing.T) {
 	}
 }
 
-// TestIntegration_QueryMessage 测试按 Key 查询消息
 func TestIntegration_QueryMessage(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -86,7 +77,6 @@ func TestIntegration_QueryMessage(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取一个 Topic
 	topicList, err := client.FetchAllTopicList(ctx)
 	if err != nil {
 		t.Fatalf("获取 Topic 列表失败: %v", err)
@@ -105,7 +95,7 @@ func TestIntegration_QueryMessage(t *testing.T) {
 		t.Skip("没有可用的测试 Topic")
 	}
 
-	// 按 Key 查询消息（使用空 Key 查询所有）
+	// An empty key matches every message.
 	messages, err := client.QueryMessage(ctx, testTopic, "", 10, 0, 0)
 	if err != nil {
 		t.Logf("查询消息失败（可能是没有消息）: %v", err)
@@ -121,13 +111,11 @@ func TestIntegration_QueryMessage(t *testing.T) {
 	}
 }
 
-// TestIntegration_ViewMessage 测试按 ID 查询消息详情
 func TestIntegration_ViewMessage(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	t.Skip("跳过 ViewMessage 测试：需要有效的消息 ID")
 }
 
-// TestIntegration_SearchOffset 测试搜索偏移
 func TestIntegration_SearchOffset(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -136,7 +124,6 @@ func TestIntegration_SearchOffset(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -157,7 +144,6 @@ func TestIntegration_SearchOffset(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 获取一个 Topic
 	topicList, err := client.FetchAllTopicList(ctx)
 	if err != nil {
 		t.Fatalf("获取 Topic 列表失败: %v", err)
@@ -176,7 +162,6 @@ func TestIntegration_SearchOffset(t *testing.T) {
 		t.Skip("没有可用的测试 Topic")
 	}
 
-	// 搜索偏移
 	offset, err := client.SearchOffset(ctx, brokerAddr, testTopic, 0, 0)
 	if err != nil {
 		t.Logf("搜索偏移失败: %v", err)
@@ -186,19 +171,16 @@ func TestIntegration_SearchOffset(t *testing.T) {
 	t.Logf("Topic %s 队列 0 偏移: %d", testTopic, offset)
 }
 
-// TestIntegration_ConsumeMessageDirectly 测试直接消费消息
 func TestIntegration_ConsumeMessageDirectly(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	t.Skip("跳过 ConsumeMessageDirectly 测试：需要在线消费者和有效消息 ID")
 }
 
-// TestIntegration_ResumeCheckHalfMessage 测试恢复检查半消息
 func TestIntegration_ResumeCheckHalfMessage(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	t.Skip("跳过 ResumeCheckHalfMessage 测试：需要有效的事务消息 ID")
 }
 
-// TestIntegration_SetMessageRequestMode 测试设置消息请求模式
 func TestIntegration_SetMessageRequestMode(t *testing.T) {
 	skipIfNoRocketMQ(t)
 	client := getTestClient(t)
@@ -207,7 +189,6 @@ func TestIntegration_SetMessageRequestMode(t *testing.T) {
 	ctx, cancel := testContext()
 	defer cancel()
 
-	// 获取 Broker 地址
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		t.Fatalf("获取集群信息失败: %v", err)
@@ -228,7 +209,6 @@ func TestIntegration_SetMessageRequestMode(t *testing.T) {
 		t.Fatal("未找到可用的 Broker 地址")
 	}
 
-	// 创建测试资源
 	topicName := getTestTopicName("MSGMODE")
 	groupName := getTestGroupName("MSGMODE")
 
@@ -251,7 +231,6 @@ func TestIntegration_SetMessageRequestMode(t *testing.T) {
 		_ = client.DeleteSubscriptionGroup(ctx, brokerAddr, groupName)
 	}()
 
-	// 设置消息请求模式
 	err = client.SetMessageRequestMode(ctx, brokerAddr, topicName, groupName, 0, 0)
 	if err != nil {
 		t.Logf("设置消息请求模式失败（可能不支持）: %v", err)
@@ -259,4 +238,3 @@ func TestIntegration_SetMessageRequestMode(t *testing.T) {
 		t.Log("设置消息请求模式成功")
 	}
 }
-

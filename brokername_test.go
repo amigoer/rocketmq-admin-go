@@ -14,8 +14,8 @@ func newBrokerNameTestClient(t *testing.T) *Client {
 func TestRememberRouteBrokerNames(t *testing.T) {
 	client := newBrokerNameTestClient(t)
 
-	// Proxy 会把路由里的 Broker 地址改写成自己的地址，这里要记录的正是
-	// 「Proxy 地址 -> 真实 Broker 名称」。
+	// A Proxy rewrites the Broker addresses in a route to its own address, so
+	// what gets recorded is "Proxy address -> real Broker name".
 	client.rememberRouteBrokerNames(&TopicRouteData{
 		BrokerDatas: []*BrokerData{
 			{BrokerName: "broker-a", BrokerAddrs: map[string]string{"0": "127.0.0.1:8080"}},
@@ -27,7 +27,7 @@ func TestRememberRouteBrokerNames(t *testing.T) {
 	if got := client.brokerNameFor("127.0.0.1:8080"); got != "broker-a" {
 		t.Fatalf("brokerNameFor(proxy) = %q, want broker-a", got)
 	}
-	// 从节点地址也要能解析出同一个 Broker 名称。
+	// A slave's address must resolve to the same Broker name.
 	if got := client.brokerNameFor("10.0.0.3:10911"); got != "broker-b" {
 		t.Fatalf("brokerNameFor(slave) = %q, want broker-b", got)
 	}
@@ -43,7 +43,7 @@ func TestRememberClusterBrokerNames(t *testing.T) {
 	client.rememberClusterBrokerNames(&ClusterInfo{
 		BrokerAddrTable: map[string]*BrokerData{
 			"broker-a": {BrokerName: "broker-a", BrokerAddrs: map[string]string{"0": "10.0.0.1:10911"}},
-			// BrokerData.BrokerName 为空时回退到表的键。
+			// Falls back to the table key when BrokerData.BrokerName is empty.
 			"broker-c": {BrokerAddrs: map[string]string{"0": "10.0.0.9:10911"}},
 			"broker-d": nil,
 		},
