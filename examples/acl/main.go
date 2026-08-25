@@ -1,7 +1,7 @@
 //go:build ignore
 // +build ignore
 
-// ACL 权限管理示例
+// Example: managing ACL users and rules.
 package main
 
 import (
@@ -13,10 +13,9 @@ import (
 )
 
 func main() {
-	// 连接支持 ACL 的 NameServer/Broker
 	client, err := admin.NewClient(
 		admin.WithNameServers([]string{"127.0.0.1:9876"}),
-		// admin.WithACL("accessKey", "secretKey"), // 如果需要鉴权
+	// admin.WithACL("accessKey", "secretKey"), // uncomment if the cluster requires auth
 	)
 	if err != nil {
 		log.Fatalf("创建客户端失败: %v", err)
@@ -28,17 +27,15 @@ func main() {
 	defer client.Close()
 
 	ctx := context.Background()
-	// 注意：ACL 操作通常需要 Broker 地址，或者配置了自动寻找 Controller/Broker
-	// 这里假设直接操作某个 Broker
+	// ACL calls address one Broker directly, so its address is needed here.
 	brokerAddr := "127.0.0.1:10911"
 
-	// 1. 创建/更新用户
 	fmt.Println("=== 创建用户: test_user ===")
 	user := admin.UserInfo{
 		Username:   "test_user",
 		Password:   "12345678",
 		UserType:   "NORMAL",
-		UserStatus: "OPEN", // 启用
+		UserStatus: "OPEN", // enabled
 	}
 	if err := client.UpdateUser(ctx, brokerAddr, user); err != nil {
 		log.Printf("创建用户失败: %v", err)
@@ -46,7 +43,6 @@ func main() {
 		fmt.Println("用户创建成功")
 	}
 
-	// 2. 获取用户信息
 	fmt.Println("\n=== 获取用户信息 ===")
 	userInfo, err := client.GetUser(ctx, brokerAddr, "test_user")
 	if err != nil {
@@ -55,7 +51,6 @@ func main() {
 		fmt.Printf("用户: %s, 状态: %s\n", userInfo.Username, userInfo.UserStatus)
 	}
 
-	// 3. 配置 ACL 权限
 	fmt.Println("\n=== 配置 ACL 权限 ===")
 	acl := admin.AclInfo{
 		Subject: "test_user",
@@ -74,7 +69,6 @@ func main() {
 		fmt.Println("ACL 配置成功")
 	}
 
-	// 4. 列出 ACL
 	fmt.Println("\n=== 列出 ACL 规则 ===")
 	acls, err := client.ListAcl(ctx, brokerAddr)
 	if err != nil {

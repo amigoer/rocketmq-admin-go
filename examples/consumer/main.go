@@ -1,7 +1,7 @@
 //go:build ignore
 // +build ignore
 
-// 消费者管理示例
+// Example: managing consumer groups and offsets.
 package main
 
 import (
@@ -14,7 +14,6 @@ import (
 )
 
 func main() {
-	// 创建管理客户端
 	client, err := admin.NewClient(
 		admin.WithNameServers([]string{"127.0.0.1:9876"}),
 	)
@@ -29,7 +28,6 @@ func main() {
 
 	ctx := context.Background()
 
-	// 示例 1: 创建订阅组
 	fmt.Println("=== 创建订阅组 ===")
 	groupConfig := admin.SubscriptionGroupConfig{
 		GroupName:      "TestConsumerGroup",
@@ -43,7 +41,6 @@ func main() {
 		fmt.Println("订阅组创建成功")
 	}
 
-	// 示例 2: 查询消费统计
 	fmt.Println("\n=== 查询消费统计 ===")
 	consumeStats, err := client.ExamineConsumeStats(ctx, "TestConsumerGroup")
 	if err != nil {
@@ -53,7 +50,6 @@ func main() {
 		fmt.Printf("队列数量: %d\n", len(consumeStats.OffsetTable))
 	}
 
-	// 示例 3: 查询消费者连接
 	fmt.Println("\n=== 查询消费者连接 ===")
 	connInfo, err := client.ExamineConsumerConnectionInfo(ctx, "TestConsumerGroup")
 	if err != nil {
@@ -64,9 +60,8 @@ func main() {
 		fmt.Printf("消息模型: %s\n", connInfo.MessageModel)
 	}
 
-	// 示例 4: 重置消费位点
 	fmt.Println("\n=== 重置消费位点 ===")
-	// 重置到 1 小时前
+	// One hour ago, in Unix milliseconds.
 	timestamp := (time.Now().Unix() - 3600) * 1000
 	offsets, err := client.ResetOffsetByTimestamp(ctx, "TestTopic", "TestConsumerGroup", timestamp, false)
 	if err != nil {

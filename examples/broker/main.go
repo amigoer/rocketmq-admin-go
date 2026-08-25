@@ -1,7 +1,7 @@
 //go:build ignore
 // +build ignore
 
-// Broker 管理示例
+// Example: inspecting Broker runtime stats and configuration.
 package main
 
 import (
@@ -14,7 +14,6 @@ import (
 )
 
 func main() {
-	// 1. 初始化客户端
 	client, err := admin.NewClient(
 		admin.WithNameServers([]string{"127.0.0.1:9876"}),
 		admin.WithTimeout(3*time.Second),
@@ -30,7 +29,7 @@ func main() {
 
 	ctx := context.Background()
 
-	// 2. 获取集群信息以找到 Broker 地址
+	// Cluster info is what yields a Broker address to talk to.
 	fmt.Println("=== 获取集群信息 ===")
 	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
@@ -40,7 +39,7 @@ func main() {
 	var targetBrokerAddr string
 	for name, brokerData := range clusterInfo.BrokerAddrTable {
 		fmt.Printf("发现 Broker: %s\n", name)
-		if addr, ok := brokerData.BrokerAddrs["0"]; ok { // 获取 Master
+		if addr, ok := brokerData.BrokerAddrs["0"]; ok { // broker id "0" is the master
 			targetBrokerAddr = addr
 			break
 		}
@@ -50,13 +49,11 @@ func main() {
 		log.Fatalf("未找到可用的 Broker Master")
 	}
 
-	// 3. 获取 Broker 运行时统计
 	fmt.Printf("\n=== 获取 Broker Runtime 统计 (%s) ===\n", targetBrokerAddr)
 	kvTable, err := client.FetchBrokerRuntimeStats(ctx, targetBrokerAddr)
 	if err != nil {
 		log.Printf("获取统计失败: %v", err)
 	} else {
-		// 打印部分关键指标
 		keys := []string{"brokerVersionDesc", "msgPutTotalTodayNow", "msgGetTotalTodayNow"}
 		for _, k := range keys {
 			if v, ok := kvTable.Table[k]; ok {
@@ -65,7 +62,6 @@ func main() {
 		}
 	}
 
-	// 4. 获取 Broker 配置
 	fmt.Printf("\n=== 获取 Broker 配置 (%s) ===\n", targetBrokerAddr)
 	config, err := client.GetBrokerConfig(ctx, targetBrokerAddr)
 	if err != nil {
@@ -76,7 +72,8 @@ func main() {
 		fmt.Printf("fileReservedTime: %s\n", config["fileReservedTime"])
 	}
 
-	// 5. 更新 Broker 配置 (示例：仅打印，不实际执行以免影响环境)
+	// Updating config is left commented out so that running this example
+	// cannot change the reader's Broker.
 	// fmt.Println("\n=== 更新 Broker 配置 ===")
 	// newConfig := map[string]string{
 	// 	"fileReservedTime": "48",

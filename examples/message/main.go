@@ -1,7 +1,7 @@
 //go:build ignore
 // +build ignore
 
-// 消息操作示例
+// Example: querying and inspecting messages.
 package main
 
 import (
@@ -29,17 +29,15 @@ func main() {
 	ctx := context.Background()
 	topic := "TestTopic"
 
-	// 1. 查询 Topic 路由（辅助验证）
 	fmt.Printf("=== 查询 Topic 路由: %s ===\n", topic)
 	_, err = client.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
 		log.Printf("Topic 可能不存在: %v\n", err)
-		// 如果 Topic 不存在，后续操作可能会失败，这里仅做提示
+		// Later calls may fail without the topic; this is only a warning.
 	} else {
 		fmt.Println("Topic 存在")
 	}
 
-	// 2. 按 Key 查询消息
 	key := "Order-1001"
 	fmt.Printf("\n=== 按 Key 查询消息: %s ===\n", key)
 	beginTime := time.Now().Add(-24 * time.Hour).UnixMilli()
@@ -51,16 +49,15 @@ func main() {
 		fmt.Printf("找到消息数: %d\n", len(msgs))
 		for i, msg := range msgs {
 			fmt.Printf("[%d] MsgId: %s, StoreTime: %d\n", i, msg.MsgId, msg.StoreTimestamp)
-			// 记录一个 MsgId 用于后续查询详情
+			// Expand only the first hit.
 			if i == 0 {
 				queryDetail(ctx, client, topic, msg.MsgId)
 			}
 		}
 	}
 
-	// 3. 查询消费队列
 	fmt.Printf("\n=== 查询消费队列: %s ===\n", topic)
-	// 假设 Broker 地址已知，实际应从 ClusterInfo 获取
+	// Hardcoded for brevity; real code should read this from ClusterInfo.
 	brokerAddr := "127.0.0.1:10911"
 	qData, err := client.QueryConsumeQueue(ctx, brokerAddr, topic, 0, 0, 10, "DefaultGroup")
 	if err != nil {
