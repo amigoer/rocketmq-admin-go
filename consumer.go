@@ -588,9 +588,13 @@ func (c *Client) UpdateConsumeOffset(ctx context.Context, brokerAddr, consumerGr
 	return nil
 }
 
-// ExamineConsumeStatsConcurrent is an alias for ExamineConsumeStats. Despite
-// the name it is not concurrent, and topic is ignored.
+// ExamineConsumeStatsConcurrent returns a consumer group's progress, scoped to
+// topic when topic is non-empty. Despite the name it does not fan out; it
+// exists to mirror the Java admin API.
 func (c *Client) ExamineConsumeStatsConcurrent(ctx context.Context, consumerGroup, topic string) (*ConsumeStats, error) {
+	if topic != "" {
+		return c.ExamineConsumeStatsByTopic(ctx, consumerGroup, topic)
+	}
 	return c.ExamineConsumeStats(ctx, consumerGroup)
 }
 

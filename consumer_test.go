@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"encoding/json"
 	"testing"
 )
 
@@ -778,4 +779,80 @@ func TestIntegration_UpdateAndGetGroupReadForbidden(t *testing.T) {
 	if err != nil {
 		t.Logf("failed to restore the read flag: %v", err)
 	}
+}
+
+// Regression test: ExamineConsumeStatsConcurrent used to drop its topic
+// argument and silently return the group's stats for every topic.
+func TestIntegration_ExamineConsumeStatsConcurrentScopesToTopic(t *testing.T) {
+	skipIfNoRocketMQ(t)
+	client := getTestClient(t)
+	defer client.Close()
+
+	ctx, cancel := testContext()
+	defer cancel()
+
+	clusterInfo, err := client.ExamineBrokerClusterInfo(ctx)
+	if err != nil {
+		t.Fatalf("failed to get cluster info: %v", err)
+	}
+
+	var brokerAddr string
+	for _, brokerData := range clusterInfo.BrokerAddrTable {
+		for _, addr := range brokerData.BrokerAddrs {
+			brokerAddr = addr
+			break
+		}
+		if brokerAddr != "" {
+			break
+		}
+	}
+	if brokerAddr == "" {
+		t.Fatal("no usable Broker address found")
+	}
+
+	groups, err := client.GetAllSubscriptionGroup(ctx, brokerAddr)
+	if err != nil {
+		t.Fatalf("failed to get subscription groups: %v", err)
+	}
+
+	for groupName := range groups {
+		all, err := client.ExamineConsumeStats(ctx, groupName)
+		if err != nil || len(all.OffsetTable) == 0 {
+			continue
+		}
+
+		// Pick a topic this group demonstrably consumes.
+		topic := ""
+		for key := range all.OffsetTable {
+			var mq MessageQueue
+			if json.Unmarshal([]byte(key), &mq) == nil && mq.Topic != "" {
+				topic = mq.Topic
+				break
+			}
+		}
+		if topic == "" {
+			continue
+		}
+
+		scoped, err := client.ExamineConsumeStatsConcurrent(ctx, groupName, topic)
+		if err != nil {
+			t.Fatalf("failed to query consume stats for topic %s: %v", topic, err)
+		}
+
+		for key := range scoped.OffsetTable {
+			var mq MessageQueue
+			if json.Unmarshal([]byte(key), &mq) != nil {
+				continue
+			}
+			if mq.Topic != topic {
+				t.Errorf("topic filter ignored: asked for %s, got a queue on %s", topic, mq.Topic)
+			}
+		}
+
+		t.Logf("group %s scoped to %s: %d queues (unscoped: %d)",
+			groupName, topic, len(scoped.OffsetTable), len(all.OffsetTable))
+		return
+	}
+
+	t.Skip("no consumer group with consume stats to check against")
 }

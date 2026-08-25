@@ -60,5 +60,9 @@ These have no direct `MQAdminExt` counterpart:
 
 `ExamineConsumeStatsConcurrent`, `QueryConsumeTimeSpanConcurrent`,
 `QueryTopicsByConsumerConcurrent` and `ExamineTopicStatsConcurrent` mirror names
-from the Java side, but are currently plain aliases for their non-concurrent
-counterparts — they do not fan out. Their doc comments say so.
+from the Java side, but none of them fans out — each delegates to its
+non-concurrent counterpart. Their doc comments say so.
+
+`ExamineConsumeStatsConcurrent` is the one that carries an extra argument: it
+routes to `ExamineConsumeStatsByTopic` when `topic` is non-empty, and to
+`ExamineConsumeStats` otherwise.
