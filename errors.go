@@ -4,16 +4,16 @@ import "errors"
 
 // Sentinel errors returned by this package; compare them with errors.Is.
 var (
-	ErrNotImplemented        = errors.New("功能未实现")
-	ErrAlreadyStarted        = errors.New("客户端已启动")
-	ErrClientClosed          = errors.New("客户端已关闭")
-	ErrBrokerNotFound        = errors.New("Broker 未找到")
-	ErrTopicNotFound         = errors.New("Topic 未找到")
-	ErrConsumerGroupNotFound = errors.New("消费者组未找到")
-	ErrTimeout               = errors.New("请求超时")
-	ErrConnectionFailed      = errors.New("连接失败")
-	ErrInvalidResponse       = errors.New("无效响应")
-	ErrPermissionDenied      = errors.New("权限不足")
+	ErrNotImplemented        = errors.New("not implemented")
+	ErrAlreadyStarted        = errors.New("client already started")
+	ErrClientClosed          = errors.New("client closed")
+	ErrBrokerNotFound        = errors.New("broker not found")
+	ErrTopicNotFound         = errors.New("topic not found")
+	ErrConsumerGroupNotFound = errors.New("consumer group not found")
+	ErrTimeout               = errors.New("request timeout")
+	ErrConnectionFailed      = errors.New("connection failed")
+	ErrInvalidResponse       = errors.New("invalid response")
+	ErrPermissionDenied      = errors.New("permission denied")
 )
 
 // AdminError carries the response code and remark returned by the broker.
