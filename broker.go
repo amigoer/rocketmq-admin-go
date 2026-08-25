@@ -8,11 +8,7 @@ import (
 	"github.com/amigoer/rocketmq-admin-go/protocol/remoting"
 )
 
-// =============================================================================
-// Broker 管理接口
-// =============================================================================
-
-// FetchBrokerRuntimeStats 获取 Broker 运行时统计信息
+// FetchBrokerRuntimeStats returns the runtime statistics of one Broker.
 func (c *Client) FetchBrokerRuntimeStats(ctx context.Context, brokerAddr string) (*KVTable, error) {
 	cmd := remoting.NewRequest(remoting.GetBrokerRuntimeInfo, nil)
 
@@ -33,7 +29,7 @@ func (c *Client) FetchBrokerRuntimeStats(ctx context.Context, brokerAddr string)
 	return &kvTable, nil
 }
 
-// GetBrokerConfig 获取 Broker 配置
+// GetBrokerConfig returns the configuration of one Broker.
 func (c *Client) GetBrokerConfig(ctx context.Context, brokerAddr string) (map[string]string, error) {
 	cmd := remoting.NewRequest(remoting.GetBrokerConfig, nil)
 
@@ -46,10 +42,9 @@ func (c *Client) GetBrokerConfig(ctx context.Context, brokerAddr string) (map[st
 		return nil, NewAdminError(resp.Code, resp.Remark)
 	}
 
-	// Broker 配置以 Properties 格式返回
 	config := make(map[string]string)
 	if err := json.Unmarshal(resp.Body, &config); err != nil {
-		// 如果 JSON 解析失败，尝试解析为字符串
+		// Not JSON: a Broker may answer with a raw properties blob.
 		configStr := string(resp.Body)
 		if configStr != "" {
 			config["raw"] = configStr
@@ -59,7 +54,7 @@ func (c *Client) GetBrokerConfig(ctx context.Context, brokerAddr string) (map[st
 	return config, nil
 }
 
-// UpdateBrokerConfig 更新 Broker 配置
+// UpdateBrokerConfig applies the given properties to one Broker.
 func (c *Client) UpdateBrokerConfig(ctx context.Context, brokerAddr string, properties map[string]string) error {
 	extFields := make(map[string]string)
 	for k, v := range properties {
@@ -80,7 +75,8 @@ func (c *Client) UpdateBrokerConfig(ctx context.Context, brokerAddr string, prop
 	return nil
 }
 
-// WipeWritePermOfBroker 清除 Broker 写权限
+// WipeWritePermOfBroker removes write permission from a Broker and returns
+// the number of affected topics.
 func (c *Client) WipeWritePermOfBroker(ctx context.Context, brokerName string) (int, error) {
 	extFields := map[string]string{
 		"brokerName": brokerName,
@@ -96,18 +92,18 @@ func (c *Client) WipeWritePermOfBroker(ctx context.Context, brokerName string) (
 		return 0, NewAdminError(resp.Code, resp.Remark)
 	}
 
-	// 返回修改的队列数
 	var result struct {
 		WipeTopicCount int `json:"wipeTopicCount"`
 	}
 	if err := json.Unmarshal(resp.Body, &result); err != nil {
-		return 0, nil // 忽略解析错误
+		return 0, nil // count is best effort; the permission change already succeeded
 	}
 
 	return result.WipeTopicCount, nil
 }
 
-// AddWritePermOfBroker 添加 Broker 写权限
+// AddWritePermOfBroker restores write permission on a Broker and returns the
+// number of affected topics.
 func (c *Client) AddWritePermOfBroker(ctx context.Context, brokerName string) (int, error) {
 	extFields := map[string]string{
 		"brokerName": brokerName,
@@ -133,7 +129,7 @@ func (c *Client) AddWritePermOfBroker(ctx context.Context, brokerName string) (i
 	return result.AddTopicCount, nil
 }
 
-// ViewBrokerStatsData 查看 Broker 统计数据
+// ViewBrokerStatsData returns one statistics series from a Broker.
 func (c *Client) ViewBrokerStatsData(ctx context.Context, brokerAddr, statsName, statsKey string) (*BrokerStatsData, error) {
 	extFields := map[string]string{
 		"statsName": statsName,
@@ -158,7 +154,7 @@ func (c *Client) ViewBrokerStatsData(ctx context.Context, brokerAddr, statsName,
 	return &stats, nil
 }
 
-// GetBrokerHAStatus 获取 Broker HA 状态
+// GetBrokerHAStatus returns the master/slave replication status of a Broker.
 func (c *Client) GetBrokerHAStatus(ctx context.Context, brokerAddr string) (*BrokerHAStatus, error) {
 	cmd := remoting.NewRequest(remoting.GetBrokerHAStatus, nil)
 
@@ -179,11 +175,7 @@ func (c *Client) GetBrokerHAStatus(ctx context.Context, brokerAddr string) (*Bro
 	return &status, nil
 }
 
-// =============================================================================
-// Broker 容器管理
-// =============================================================================
-
-// AddBrokerToContainer 添加 Broker 到容器
+// AddBrokerToContainer starts a Broker inside a Broker container.
 func (c *Client) AddBrokerToContainer(ctx context.Context, brokerContainerAddr, brokerConfig string) error {
 	extFields := map[string]string{
 		"brokerConfigPath": brokerConfig,
@@ -207,7 +199,7 @@ func (c *Client) AddBrokerToContainer(ctx context.Context, brokerContainerAddr, 
 	return nil
 }
 
-// RemoveBrokerFromContainer 从容器移除 Broker
+// RemoveBrokerFromContainer stops a Broker running inside a Broker container.
 func (c *Client) RemoveBrokerFromContainer(ctx context.Context, brokerContainerAddr, clusterName, brokerName string, brokerId int) error {
 	extFields := map[string]string{
 		"clusterName": clusterName,
@@ -233,14 +225,14 @@ func (c *Client) RemoveBrokerFromContainer(ctx context.Context, brokerContainerA
 	return nil
 }
 
-// BrokerEpochInfo Broker Epoch 信息
+// BrokerEpochInfo is a Broker's replication epoch and the offsets it covers.
 type BrokerEpochInfo struct {
-	Epoch         int64 `json:"epoch"`         // Epoch
-	MaxOffset     int64 `json:"maxOffset"`     // 最大偏移
-	ConfirmOffset int64 `json:"confirmOffset"` // 确认偏移
+	Epoch         int64 `json:"epoch"`
+	MaxOffset     int64 `json:"maxOffset"`
+	ConfirmOffset int64 `json:"confirmOffset"`
 }
 
-// GetBrokerEpochCache 获取 Broker Epoch 缓存
+// GetBrokerEpochCache returns the cached epoch information of a Broker.
 func (c *Client) GetBrokerEpochCache(ctx context.Context, brokerAddr string) (*BrokerEpochInfo, error) {
 	cmd := remoting.NewRequest(remoting.GetBrokerEpochCache, nil)
 

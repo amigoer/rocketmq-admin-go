@@ -7,27 +7,14 @@ import (
 	"time"
 )
 
-// =============================================================================
-// 测试配置常量
-// =============================================================================
-
 const (
-	// 默认 NameServer 地址
 	testNameServerAddr = "localhost:9876"
-	// 测试超时时间
-	testTimeout = 10 * time.Second
-	// 测试 Topic 前缀
-	testTopicPrefix = "TEST_TOPIC_"
-	// 测试消费组前缀
-	testGroupPrefix = "TEST_GROUP_"
+	testTimeout        = 10 * time.Second
+	testTopicPrefix    = "TEST_TOPIC_"
+	testGroupPrefix    = "TEST_GROUP_"
 )
 
-// =============================================================================
-// 测试辅助函数
-// =============================================================================
-
-// getTestNameServer 获取测试用 NameServer 地址
-// 优先使用环境变量 ROCKETMQ_NAMESRV_ADDR
+// getTestNameServer returns ROCKETMQ_NAMESRV_ADDR, or the default address.
 func getTestNameServer() string {
 	if addr := os.Getenv("ROCKETMQ_NAMESRV_ADDR"); addr != "" {
 		return addr
@@ -35,7 +22,7 @@ func getTestNameServer() string {
 	return testNameServerAddr
 }
 
-// getTestClient 创建测试客户端
+// getTestClient creates and starts a client, failing the test if it cannot.
 func getTestClient(t *testing.T) *Client {
 	client, err := NewClient(
 		WithNameServers([]string{getTestNameServer()}),
@@ -52,13 +39,12 @@ func getTestClient(t *testing.T) *Client {
 	return client
 }
 
-// skipIfNoRocketMQ 如果 RocketMQ 不可用则跳过测试
+// skipIfNoRocketMQ skips the test unless a reachable RocketMQ cluster is configured.
 func skipIfNoRocketMQ(t *testing.T) {
 	if os.Getenv("ROCKETMQ_TEST_SKIP") == "true" {
 		t.Skip("跳过 RocketMQ 集成测试 (ROCKETMQ_TEST_SKIP=true)")
 	}
 
-	// 尝试连接 NameServer 验证可用性
 	client, err := NewClient(
 		WithNameServers([]string{getTestNameServer()}),
 		WithTimeout(3*time.Second),
@@ -75,24 +61,24 @@ func skipIfNoRocketMQ(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	// 使用 FetchAllTopicList 检测可用性，比 ExamineBrokerClusterInfo 更可靠
+	// FetchAllTopicList is a more reliable liveness probe than ExamineBrokerClusterInfo.
 	_, err = client.FetchAllTopicList(ctx)
 	if err != nil {
 		t.Skipf("跳过测试: RocketMQ 不可用: %v", err)
 	}
 }
 
-// getTestTopicName 生成测试 Topic 名称
+// getTestTopicName builds a unique topic name from suffix and the current time.
 func getTestTopicName(suffix string) string {
 	return testTopicPrefix + suffix + "_" + time.Now().Format("20060102150405")
 }
 
-// getTestGroupName 生成测试消费组名称
+// getTestGroupName builds a unique group name from suffix and the current time.
 func getTestGroupName(suffix string) string {
 	return testGroupPrefix + suffix + "_" + time.Now().Format("20060102150405")
 }
 
-// testContext 创建带超时的测试上下文
+// testContext returns a context bounded by testTimeout.
 func testContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), testTimeout)
 }

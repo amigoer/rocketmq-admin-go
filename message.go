@@ -8,26 +8,22 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/apache/rocketmq-client-go/v2/primitive"
 	"github.com/amigoer/rocketmq-admin-go/protocol/remoting"
+	"github.com/apache/rocketmq-client-go/v2/primitive"
 )
 
-// =============================================================================
-// 消费队列查询
-// =============================================================================
-
-// ConsumeQueueData 消费队列数据
+// ConsumeQueueData is one entry of a broker's consume queue index.
 type ConsumeQueueData struct {
-	PhysicalOffset int64  `json:"physicOffset"` // 物理偏移
-	Size           int32  `json:"size"`         // 大小
-	TagsCode       int64  `json:"tagsCode"`     // Tags 哈希码
-	ExtendData     string `json:"extendData"`   // 扩展数据
-	BitMap         string `json:"bitMap"`       // 位图
-	Eval           bool   `json:"eval"`         // 是否有效
-	Msg            string `json:"msg"`          // 消息
+	PhysicalOffset int64  `json:"physicOffset"` // offset into the CommitLog
+	Size           int32  `json:"size"`
+	TagsCode       int64  `json:"tagsCode"` // tag hash, used for broker-side filtering
+	ExtendData     string `json:"extendData"`
+	BitMap         string `json:"bitMap"`
+	Eval           bool   `json:"eval"`
+	Msg            string `json:"msg"`
 }
 
-// QueryConsumeQueue 查询消费队列
+// QueryConsumeQueue returns consume queue entries starting at index.
 func (c *Client) QueryConsumeQueue(ctx context.Context, brokerAddr, topic string, queueId int, index, count int, consumerGroup string) ([]ConsumeQueueData, error) {
 	extFields := map[string]string{
 		"topic":         topic,
@@ -57,20 +53,16 @@ func (c *Client) QueryConsumeQueue(ctx context.Context, brokerAddr, topic string
 	return wrapper.QueueData, nil
 }
 
-// =============================================================================
-// 消息高级操作
-// =============================================================================
-
-// ConsumeMessageDirectlyResult 直接消费消息结果
+// ConsumeMessageDirectlyResult is the outcome of a forced re-consumption.
 type ConsumeMessageDirectlyResult struct {
-	Order          bool   `json:"order"`          // 是否顺序消费
-	AutoCommit     bool   `json:"autoCommit"`     // 是否自动提交
-	SpentTimeMills int64  `json:"spentTimeMills"` // 消费耗时
-	ConsumeResult  string `json:"consumeResult"`  // 消费结果
-	Remark         string `json:"remark"`         // 备注
+	Order          bool   `json:"order"`
+	AutoCommit     bool   `json:"autoCommit"`
+	SpentTimeMills int64  `json:"spentTimeMills"`
+	ConsumeResult  string `json:"consumeResult"`
+	Remark         string `json:"remark"`
 }
 
-// ConsumeMessageDirectly 直接消费消息
+// ConsumeMessageDirectly makes one consumer client re-consume a message now.
 func (c *Client) ConsumeMessageDirectly(ctx context.Context, consumerGroup, clientId, topic, msgId string) (*ConsumeMessageDirectlyResult, error) {
 	extFields := map[string]string{
 		"consumerGroup": consumerGroup,
@@ -80,7 +72,7 @@ func (c *Client) ConsumeMessageDirectly(ctx context.Context, consumerGroup, clie
 	}
 	cmd := remoting.NewRequest(remoting.ConsumeMessageDirectly, extFields)
 
-	// 获取集群信息找到 Broker
+	// Any Broker in the cluster can route the request; try them in turn.
 	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		return nil, err
@@ -113,7 +105,7 @@ func (c *Client) ConsumeMessageDirectly(ctx context.Context, consumerGroup, clie
 	return nil, fmt.Errorf("消费消息失败")
 }
 
-// ResumeCheckHalfMessage 恢复检查半消息
+// ResumeCheckHalfMessage retriggers the transaction check on a half message.
 func (c *Client) ResumeCheckHalfMessage(ctx context.Context, topic, msgId string) (bool, error) {
 	extFields := map[string]string{
 		"topic": topic,
@@ -121,7 +113,6 @@ func (c *Client) ResumeCheckHalfMessage(ctx context.Context, topic, msgId string
 	}
 	cmd := remoting.NewRequest(remoting.ResumeCheckHalfMessage, extFields)
 
-	// 获取路由信息
 	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
 		return false, err
@@ -147,7 +138,7 @@ func (c *Client) ResumeCheckHalfMessage(ctx context.Context, topic, msgId string
 	return false, fmt.Errorf("恢复半消息失败")
 }
 
-// SetMessageRequestMode 设置消息请求模式
+// SetMessageRequestMode switches a topic/group between pull and pop consumption.
 func (c *Client) SetMessageRequestMode(ctx context.Context, brokerAddr, topic, consumerGroup string, mode int, popShareQueueNum int) error {
 	extFields := map[string]string{
 		"topic":            topic,
@@ -169,18 +160,13 @@ func (c *Client) SetMessageRequestMode(ctx context.Context, brokerAddr, topic, c
 	return nil
 }
 
-// =============================================================================
-// 消息轨迹
-// =============================================================================
-
-// MessageTrackDetail 查询消息消费轨迹
-// 根据消息的 Topic 找到所有消费者组，然后逐一查询消费状态
+// MessageTrackDetail reports, for each consumer group subscribed to the
+// message's topic, whether that group consumed it.
 func (c *Client) MessageTrackDetail(ctx context.Context, msg *MessageExt) ([]MessageTrack, error) {
 	if msg == nil {
 		return nil, fmt.Errorf("消息不能为空")
 	}
 
-	// 查询哪些消费者组在消费这个 Topic
 	groups, err := c.QueryTopicConsumeByWho(ctx, msg.Topic)
 	if err != nil {
 		return nil, fmt.Errorf("查询 Topic 消费者失败: %w", err)
@@ -193,7 +179,7 @@ func (c *Client) MessageTrackDetail(ctx context.Context, msg *MessageExt) ([]Mes
 			TrackType:     "UNKNOWN",
 		}
 
-		// 尝试获取消费者连接信息
+		// A group with no live connection cannot be tracked; report it as such.
 		connInfo, err := c.ExamineConsumerConnectionInfo(ctx, group)
 		if err != nil {
 			track.TrackType = "NOT_ONLINE"
@@ -205,7 +191,6 @@ func (c *Client) MessageTrackDetail(ctx context.Context, msg *MessageExt) ([]Mes
 		if connInfo.ConsumeType == "CONSUME_ACTIVELY" {
 			track.TrackType = "PULL"
 		} else {
-			// 检查订阅信息
 			if sub, ok := connInfo.SubscriptionTable[msg.Topic]; ok {
 				if sub.ExpressionType == "TAG" {
 					if sub.SubString == "*" {
@@ -227,11 +212,8 @@ func (c *Client) MessageTrackDetail(ctx context.Context, msg *MessageExt) ([]Mes
 	return tracks, nil
 }
 
-// =============================================================================
-// 搜索偏移
-// =============================================================================
-
-// SearchOffset 根据时间戳搜索指定队列的偏移量
+// SearchOffset returns the offset of the first message stored at or after
+// timestamp in one queue.
 func (c *Client) SearchOffset(ctx context.Context, brokerAddr, topic string, queueId int, timestamp int64) (int64, error) {
 	extFields := map[string]string{
 		"topic":     topic,
@@ -249,7 +231,7 @@ func (c *Client) SearchOffset(ctx context.Context, brokerAddr, topic string, que
 		return 0, NewAdminError(resp.Code, resp.Remark)
 	}
 
-	// RocketMQ 的 SearchOffset 响应将 offset 放在 ExtFields 中
+	// RocketMQ puts the offset in ExtFields, not the body.
 	offsetStr, ok := resp.ExtFields["offset"]
 	if ok && offsetStr != "" {
 		offset, parseErr := strconv.ParseInt(offsetStr, 10, 64)
@@ -258,7 +240,7 @@ func (c *Client) SearchOffset(ctx context.Context, brokerAddr, topic string, que
 		}
 	}
 
-	// 兼容：尝试从 Body JSON 解析
+	// Some versions answer with a JSON body instead.
 	if len(resp.Body) > 0 {
 		var result struct {
 			Offset int64 `json:"offset"`
@@ -271,19 +253,15 @@ func (c *Client) SearchOffset(ctx context.Context, brokerAddr, topic string, que
 	return 0, fmt.Errorf("解析偏移结果失败: 响应中未包含 offset 字段")
 }
 
-// =============================================================================
-// 按偏移量拉取消息
-// =============================================================================
-
-// PullMessageResult 拉取消息结果
+// PullMessageResult is one batch of pulled messages plus the queue's bounds.
 type PullMessageResult struct {
-	Messages       []*MessageExt // 消息列表
-	NextBeginOffset int64        // 下次拉取起始偏移量
-	MinOffset      int64         // 队列最小偏移量
-	MaxOffset      int64         // 队列最大偏移量
+	Messages        []*MessageExt
+	NextBeginOffset int64 // where to resume pulling
+	MinOffset       int64
+	MaxOffset       int64
 }
 
-// PullMessage 从指定 Broker 的指定队列、指定偏移量拉取消息
+// PullMessage pulls up to maxMsgNums messages from one queue at one offset.
 func (c *Client) PullMessage(ctx context.Context, brokerAddr, topic string, queueId int, offset int64, maxMsgNums int) (*PullMessageResult, error) {
 	// sysFlag = 6: bit1(suspend=true) | bit2(subscription=true)
 	extFields := map[string]string{
@@ -308,7 +286,7 @@ func (c *Client) PullMessage(ctx context.Context, brokerAddr, topic string, queu
 
 	result := &PullMessageResult{}
 
-	// 解析 ExtFields 中的偏移量信息
+	// Offsets come back in ExtFields, not the body.
 	if v, ok := resp.ExtFields["nextBeginOffset"]; ok {
 		result.NextBeginOffset, _ = strconv.ParseInt(v, 10, 64)
 	}
@@ -319,9 +297,8 @@ func (c *Client) PullMessage(ctx context.Context, brokerAddr, topic string, queu
 		result.MaxOffset, _ = strconv.ParseInt(v, 10, 64)
 	}
 
-	// resp.Code == 0(FOUND) 表示找到消息，Body 中包含二进制编码的消息数据
+	// Success (FOUND) means the body holds binary-encoded messages.
 	if resp.Code == remoting.Success && len(resp.Body) > 0 {
-		// 使用 rocketmq-client-go 的 DecodeMessage 解码二进制消息
 		decodedMsgs := primitive.DecodeMessage(resp.Body)
 		for _, pm := range decodedMsgs {
 			msg := &MessageExt{
@@ -342,17 +319,14 @@ func (c *Client) PullMessage(ctx context.Context, brokerAddr, topic string, queu
 			result.Messages = append(result.Messages, msg)
 		}
 	}
-	// resp.Code == 1(NO_NEW_MSG) 或其他码表示没有更多消息，返回空列表即可
+	// Any other code means no new message; an empty result is correct.
 
 	return result, nil
 }
 
-// =============================================================================
-// 按时间范围浏览消息
-// =============================================================================
-
-// QueryMessageByTime 按时间范围浏览消息
-// beginTime/endTime 为 Unix 毫秒时间戳，maxNum 为最大返回数量
+// QueryMessageByTime returns up to maxNum messages stored between beginTime
+// and endTime, given as Unix milliseconds. Queues are pulled concurrently and
+// the result is sorted by store time.
 func (c *Client) QueryMessageByTime(ctx context.Context, topic string, beginTime, endTime int64, maxNum int) ([]*MessageExt, error) {
 	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
@@ -363,7 +337,7 @@ func (c *Client) QueryMessageByTime(ctx context.Context, topic string, beginTime
 		maxNum = 32
 	}
 
-	// 收集所有 (brokerAddr, queueId) 对
+	// Collect every (brokerAddr, queueId) pair the topic routes to.
 	type queueInfo struct {
 		brokerAddr string
 		queueId    int
@@ -371,11 +345,11 @@ func (c *Client) QueryMessageByTime(ctx context.Context, topic string, beginTime
 	var queues []queueInfo
 
 	for _, qd := range routeData.QueueDatas {
-		// 找到该 Broker 的 Master 地址
+		// Broker id "0" is the master.
 		var brokerAddr string
 		for _, bd := range routeData.BrokerDatas {
 			if bd.BrokerName == qd.BrokerName {
-				brokerAddr = bd.BrokerAddrs["0"] // Master
+				brokerAddr = bd.BrokerAddrs["0"]
 				break
 			}
 		}
@@ -392,7 +366,7 @@ func (c *Client) QueryMessageByTime(ctx context.Context, topic string, beginTime
 		return nil, fmt.Errorf("未找到可用的消息队列")
 	}
 
-	// 并发查询每个队列
+	// Pull each queue concurrently.
 	type queueResult struct {
 		msgs []*MessageExt
 		err  error
@@ -410,14 +384,13 @@ func (c *Client) QueryMessageByTime(ctx context.Context, topic string, beginTime
 		go func(idx int, qi queueInfo) {
 			defer wg.Done()
 
-			// 1. 根据 beginTime 定位起始偏移量
+			// Locate where beginTime falls in this queue.
 			startOffset, err := c.SearchOffset(ctx, qi.brokerAddr, topic, qi.queueId, beginTime)
 			if err != nil {
 				results[idx] = queueResult{err: err}
 				return
 			}
 
-			// 2. 从起始偏移量拉取消息
 			var collected []*MessageExt
 			currentOffset := startOffset
 
@@ -429,7 +402,7 @@ func (c *Client) QueryMessageByTime(ctx context.Context, topic string, beginTime
 
 				pullResult, pullErr := c.PullMessage(ctx, qi.brokerAddr, topic, qi.queueId, currentOffset, batchSize)
 				if pullErr != nil {
-					// 拉取失败不阻塞整体，返回已收集的消息
+					// A failed pull must not sink the whole query; keep what we have.
 					break
 				}
 
@@ -439,7 +412,7 @@ func (c *Client) QueryMessageByTime(ctx context.Context, topic string, beginTime
 
 				reachedEnd := false
 				for _, msg := range pullResult.Messages {
-					// 过滤超出 endTime 的消息
+					// Stop this queue once messages pass endTime.
 					if endTime > 0 && msg.StoreTimestamp > endTime {
 						reachedEnd = true
 						break
@@ -451,9 +424,8 @@ func (c *Client) QueryMessageByTime(ctx context.Context, topic string, beginTime
 					break
 				}
 
-				// 更新偏移量继续拉取
 				if pullResult.NextBeginOffset <= currentOffset {
-					break // 防止死循环
+					break // NextBeginOffset did not advance; stop rather than spin
 				}
 				currentOffset = pullResult.NextBeginOffset
 			}
@@ -464,21 +436,18 @@ func (c *Client) QueryMessageByTime(ctx context.Context, topic string, beginTime
 
 	wg.Wait()
 
-	// 汇总所有队列的消息
 	var allMessages []*MessageExt
 	for _, r := range results {
 		if r.err != nil {
-			continue // 跳过失败的队列
+			continue
 		}
 		allMessages = append(allMessages, r.msgs...)
 	}
 
-	// 按存储时间排序
 	sort.Slice(allMessages, func(i, j int) bool {
 		return allMessages[i].StoreTimestamp < allMessages[j].StoreTimestamp
 	})
 
-	// 截断到 maxNum
 	if len(allMessages) > maxNum {
 		allMessages = allMessages[:maxNum]
 	}
@@ -486,11 +455,7 @@ func (c *Client) QueryMessageByTime(ctx context.Context, topic string, beginTime
 	return allMessages, nil
 }
 
-// =============================================================================
-// 消息查询与详情
-// =============================================================================
-
-// QueryMessage 按 Key 查询消息
+// QueryMessage returns messages carrying key, stored between begin and end.
 func (c *Client) QueryMessage(ctx context.Context, topic, key string, maxNum int, begin, end int64) ([]*MessageExt, error) {
 	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
@@ -499,7 +464,7 @@ func (c *Client) QueryMessage(ctx context.Context, topic, key string, maxNum int
 
 	var allMessages []*MessageExt
 	for _, brokerData := range routeData.BrokerDatas {
-		// 仅查询 Master
+		// Only masters answer message queries.
 		brokerAddr := brokerData.BrokerAddrs["0"]
 		if brokerAddr == "" {
 			continue
@@ -523,7 +488,7 @@ func (c *Client) QueryMessage(ctx context.Context, topic, key string, maxNum int
 			continue
 		}
 
-		// QueryMessage 的响应体也是二进制编码的消息，使用 DecodeMessage 解码
+		// The response body is binary-encoded, same as a pull.
 		if len(resp.Body) > 0 {
 			decodedMsgs := primitive.DecodeMessage(resp.Body)
 			for _, pm := range decodedMsgs {
@@ -550,7 +515,7 @@ func (c *Client) QueryMessage(ctx context.Context, topic, key string, maxNum int
 	return allMessages, nil
 }
 
-// ViewMessage 按 ID 查询消息详情
+// ViewMessage returns one message by id.
 func (c *Client) ViewMessage(ctx context.Context, topic, msgId string) (*MessageExt, error) {
 	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
@@ -564,8 +529,8 @@ func (c *Client) ViewMessage(ctx context.Context, topic, msgId string) (*Message
 	cmd := remoting.NewRequest(remoting.ViewMessageById, extFields)
 
 	for _, brokerData := range routeData.BrokerDatas {
-		// 查询任意可用节点（虽然 ID 可能指定了存储节点，但简单遍历也是一种策略）
-		// 更严谨的做法是解析 offsetMsgId 找到具体 broker，或者遍历所有 master
+		// The id may name its storage node, but walking every node is simpler.
+		// A stricter version would parse offsetMsgId, or scan masters only.
 		for _, brokerAddr := range brokerData.BrokerAddrs {
 			resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
 			if err != nil {

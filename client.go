@@ -8,21 +8,21 @@ import (
 	"github.com/amigoer/rocketmq-admin-go/protocol/remoting"
 )
 
-// Client 是 RocketMQ 运维管理客户端
+// Client is a RocketMQ admin client. It is safe for concurrent use.
 type Client struct {
-	opts    *Options                 // 客户端配置
-	pool    *remoting.ConnectionPool // 连接池
-	mu      sync.RWMutex             // 保护内部状态
-	started bool                     // 是否已启动
-	closed  bool                     // 是否已关闭
+	opts    *Options
+	pool    *remoting.ConnectionPool
+	mu      sync.RWMutex // guards started and closed
+	started bool
+	closed  bool
 
-	// brokerNames 缓存 Broker 地址到名称的映射，供转发请求填充 bname 字段。
-	// 详见 brokername.go。
+	// brokerNames maps a Broker address to its name so forwarded requests can
+	// fill in the bname field. See brokername.go.
 	brokerNameMu sync.RWMutex
 	brokerNames  map[string]string
 }
 
-// NewClient 创建新的运维管理客户端
+// NewClient creates an admin client from the given options.
 func NewClient(opts ...Option) (*Client, error) {
 	options := defaultOptions()
 	for _, opt := range opts {
@@ -41,7 +41,7 @@ func NewClient(opts ...Option) (*Client, error) {
 	return client, nil
 }
 
-// Start 启动客户端
+// Start marks the client as usable.
 func (c *Client) Start() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -57,7 +57,7 @@ func (c *Client) Start() error {
 	return nil
 }
 
-// Close 关闭客户端，释放资源
+// Close releases every pooled connection. It is idempotent.
 func (c *Client) Close() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -66,7 +66,6 @@ func (c *Client) Close() error {
 		return nil
 	}
 
-	// 关闭连接池
 	if c.pool != nil {
 		c.pool.Close()
 	}
@@ -75,25 +74,21 @@ func (c *Client) Close() error {
 	return nil
 }
 
-// IsStarted 返回客户端是否已启动
+// IsStarted reports whether Start has been called.
 func (c *Client) IsStarted() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.started
 }
 
-// IsClosed 返回客户端是否已关闭
+// IsClosed reports whether Close has been called.
 func (c *Client) IsClosed() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.closed
 }
 
-// =============================================================================
-// 内部辅助方法
-// =============================================================================
-
-// invokeNameServer 向 NameServer 发送请求
+// invokeNameServer tries each configured NameServer until one answers.
 func (c *Client) invokeNameServer(ctx context.Context, cmd *remoting.RemotingCommand) (*remoting.RemotingCommand, error) {
 	var lastErr error
 	for _, addr := range c.opts.NameServers {
@@ -119,14 +114,14 @@ func (c *Client) invokeNameServer(ctx context.Context, cmd *remoting.RemotingCom
 	return nil, ErrConnectionFailed
 }
 
-// invokeBroker 向 Broker 发送请求
+// invokeBroker sends cmd to one Broker, dropping the connection on failure.
 func (c *Client) invokeBroker(ctx context.Context, brokerAddr string, cmd *remoting.RemotingCommand) (*remoting.RemotingCommand, error) {
 	conn, err := c.pool.GetOrCreate(brokerAddr)
 	if err != nil {
 		return nil, fmt.Errorf("连接 Broker 失败: %w", err)
 	}
 
-	// RocketMQ Proxy 只有拿到 bname 才知道该把请求转发给哪个 Broker。
+	// A RocketMQ Proxy needs bname to know which Broker to forward to.
 	if cmd != nil && cmd.ExtFields != nil {
 		if _, exists := cmd.ExtFields[brokerNameField]; !exists {
 			if name := c.brokerNameFor(brokerAddr); name != "" {

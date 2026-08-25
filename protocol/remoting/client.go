@@ -1,4 +1,3 @@
-// Package remoting 实现 RocketMQ Remoting 通信协议
 package remoting
 
 import (
@@ -11,19 +10,19 @@ import (
 	"time"
 )
 
-// Client 远程通信客户端
+// Client is a connection to a single RocketMQ server.
 type Client struct {
-	addr            string                         // 服务器地址
-	conn            net.Conn                       // TCP 连接
-	mu              sync.RWMutex                   // 保护内部状态
-	connected       bool                           // 是否已连接
-	responseTables  map[int32]chan *RemotingCommand // 响应表
-	responseTableMu sync.RWMutex                   // 响应表锁
-	timeout         time.Duration                  // 默认超时时间
-	closeChan       chan struct{}                  // 关闭信号
+	addr            string
+	conn            net.Conn
+	mu              sync.RWMutex // guards conn and connected
+	connected       bool
+	responseTables  map[int32]chan *RemotingCommand // keyed by request Opaque
+	responseTableMu sync.RWMutex
+	timeout         time.Duration
+	closeChan       chan struct{}
 }
 
-// NewClient 创建新的远程通信客户端
+// NewClient creates a client for addr without dialing it.
 func NewClient(addr string, timeout time.Duration) *Client {
 	return &Client{
 		addr:           addr,
@@ -33,7 +32,7 @@ func NewClient(addr string, timeout time.Duration) *Client {
 	}
 }
 
-// Connect 连接服务器
+// Connect dials the server and starts the response reader.
 func (c *Client) Connect() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -50,13 +49,12 @@ func (c *Client) Connect() error {
 	c.conn = conn
 	c.connected = true
 
-	// 启动响应读取 goroutine
 	go c.readLoop()
 
 	return nil
 }
 
-// Close 关闭连接
+// Close shuts the connection down. It is idempotent.
 func (c *Client) Close() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -74,38 +72,34 @@ func (c *Client) Close() error {
 	return nil
 }
 
-// IsConnected 是否已连接
+// IsConnected reports whether the client holds an open connection.
 func (c *Client) IsConnected() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.connected
 }
 
-// InvokeSync 同步调用
+// InvokeSync sends cmd and waits for the response with the same Opaque.
 func (c *Client) InvokeSync(ctx context.Context, cmd *RemotingCommand) (*RemotingCommand, error) {
 	if !c.IsConnected() {
 		return nil, ErrNotConnected
 	}
 
-	// 创建响应通道
 	respChan := make(chan *RemotingCommand, 1)
 	c.responseTableMu.Lock()
 	c.responseTables[cmd.Opaque] = respChan
 	c.responseTableMu.Unlock()
 
-	// 确保清理响应通道
 	defer func() {
 		c.responseTableMu.Lock()
 		delete(c.responseTables, cmd.Opaque)
 		c.responseTableMu.Unlock()
 	}()
 
-	// 发送请求
 	if err := c.send(cmd); err != nil {
 		return nil, err
 	}
 
-	// 等待响应
 	select {
 	case resp := <-respChan:
 		return resp, nil
@@ -116,7 +110,7 @@ func (c *Client) InvokeSync(ctx context.Context, cmd *RemotingCommand) (*Remotin
 	}
 }
 
-// InvokeOneway 单向调用（不等待响应）
+// InvokeOneway sends cmd without waiting for a response.
 func (c *Client) InvokeOneway(cmd *RemotingCommand) error {
 	if !c.IsConnected() {
 		return ErrNotConnected
@@ -125,7 +119,6 @@ func (c *Client) InvokeOneway(cmd *RemotingCommand) error {
 	return c.send(cmd)
 }
 
-// send 发送命令
 func (c *Client) send(cmd *RemotingCommand) error {
 	data, err := cmd.Encode()
 	if err != nil {
@@ -148,7 +141,7 @@ func (c *Client) send(cmd *RemotingCommand) error {
 	return nil
 }
 
-// readLoop 读取响应循环
+// readLoop hands each response to whoever is waiting on its Opaque.
 func (c *Client) readLoop() {
 	for {
 		select {
@@ -165,31 +158,27 @@ func (c *Client) readLoop() {
 			return
 		}
 
-		// 读取总长度
 		lengthBuf := make([]byte, 4)
 		if _, err := io.ReadFull(conn, lengthBuf); err != nil {
-			// 连接关闭或错误
+			// Connection closed or broken; stop reading.
 			return
 		}
 
 		totalLen := int(binary.BigEndian.Uint32(lengthBuf))
-		if totalLen <= 0 || totalLen > 1024*1024*16 { // 最大 16MB
+		if totalLen <= 0 || totalLen > 1024*1024*16 { // cap a frame at 16MB
 			continue
 		}
 
-		// 读取完整数据
 		data := make([]byte, totalLen)
 		if _, err := io.ReadFull(conn, data); err != nil {
 			return
 		}
 
-		// 解码响应
 		resp, err := Decode(data)
 		if err != nil {
 			continue
 		}
 
-		// 分发响应
 		c.responseTableMu.RLock()
 		respChan, ok := c.responseTables[resp.Opaque]
 		c.responseTableMu.RUnlock()
@@ -203,9 +192,7 @@ func (c *Client) readLoop() {
 	}
 }
 
-// 错误定义
 var (
 	ErrNotConnected     = &RemotingError{Message: "未连接"}
 	ErrConnectionClosed = &RemotingError{Message: "连接已关闭"}
 )
-

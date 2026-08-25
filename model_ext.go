@@ -1,216 +1,176 @@
 package admin
 
-// =============================================================================
-// ACL 用户管理
-// =============================================================================
-
-// UserInfo 用户信息
+// UserInfo is a RocketMQ 5.x ACL user.
 type UserInfo struct {
-	Username    string   `json:"username"`    // 用户名
-	Password    string   `json:"password"`    // 密码（加密）
-	UserType    string   `json:"userType"`    // 用户类型
-	UserStatus  string   `json:"userStatus"`  // 用户状态
-	Permissions []string `json:"permissions"` // 权限列表
+	Username    string   `json:"username"`
+	Password    string   `json:"password"` // encrypted
+	UserType    string   `json:"userType"`
+	UserStatus  string   `json:"userStatus"`
+	Permissions []string `json:"permissions"`
 }
 
-// AclInfo ACL 规则信息
+// AclInfo is the set of policies attached to one subject.
 type AclInfo struct {
-	Subject     string      `json:"subject"`     // 主体（用户或组）
-	Policies    []AclPolicy `json:"policies"`    // 策略列表
-	Description string      `json:"description"` // 描述
+	Subject     string      `json:"subject"` // a user or a group
+	Policies    []AclPolicy `json:"policies"`
+	Description string      `json:"description"`
 }
 
-// AclPolicy ACL 策略
+// AclPolicy grants or denies actions on one resource.
 type AclPolicy struct {
-	Resource  string   `json:"resource"`  // 资源（Topic、Group）
-	Actions   []string `json:"actions"`   // 操作（PUB、SUB）
-	Effect    string   `json:"effect"`    // 效果（ALLOW、DENY）
-	SourceIPs []string `json:"sourceIps"` // 来源 IP 限制
-	Decision  string   `json:"decision"`  // 决策
+	Resource  string   `json:"resource"`  // a topic or a group
+	Actions   []string `json:"actions"`   // PUB, SUB
+	Effect    string   `json:"effect"`    // ALLOW, DENY
+	SourceIPs []string `json:"sourceIps"` // empty means any source
+	Decision  string   `json:"decision"`
 }
 
-// UserList 用户列表
+// UserList is the response of a user listing.
 type UserList struct {
 	Users []UserInfo `json:"users"`
 }
 
-// AclList ACL 列表
+// AclList is the response of an ACL listing.
 type AclList struct {
 	Acls []AclInfo `json:"acls"`
 }
 
-// =============================================================================
-// 旧版 ACL 配置（RocketMQ 4.x，基于 plain_acl.yml）
-// =============================================================================
-
-// PlainAccessConfig 旧版 ACL 访问配置（RocketMQ 4.x）
+// PlainAccessConfig is one entry of a RocketMQ 4.x plain_acl.yml file.
 type PlainAccessConfig struct {
-	AccessKey          string   `json:"accessKey"`          // 访问密钥
-	SecretKey          string   `json:"secretKey"`          // 秘密密钥
-	WhiteRemoteAddress string   `json:"whiteRemoteAddress"` // 白名单地址
-	Admin              bool     `json:"admin"`              // 是否管理员
-	DefaultTopicPerm   string   `json:"defaultTopicPerm"`   // 默认 Topic 权限: DENY / PUB / SUB / PUB|SUB
-	DefaultGroupPerm   string   `json:"defaultGroupPerm"`   // 默认 Group 权限
-	TopicPerms         []string `json:"topicPerms"`         // Topic 权限列表, e.g. ["topicA=PUB", "topicB=SUB"]
-	GroupPerms         []string `json:"groupPerms"`         // Group 权限列表, e.g. ["groupA=SUB"]
+	AccessKey          string   `json:"accessKey"`
+	SecretKey          string   `json:"secretKey"`
+	WhiteRemoteAddress string   `json:"whiteRemoteAddress"`
+	Admin              bool     `json:"admin"`
+	DefaultTopicPerm   string   `json:"defaultTopicPerm"` // DENY, PUB, SUB or PUB|SUB
+	DefaultGroupPerm   string   `json:"defaultGroupPerm"` // same values as DefaultTopicPerm
+	TopicPerms         []string `json:"topicPerms"`       // e.g. ["topicA=PUB", "topicB=SUB"]
+	GroupPerms         []string `json:"groupPerms"`       // e.g. ["groupA=SUB"]
 }
 
-// BrokerClusterAclVersionInfo Broker 集群 ACL 版本信息（code 52 响应）
+// BrokerClusterAclVersionInfo is the response to request code 52.
 type BrokerClusterAclVersionInfo struct {
-	BrokerAddr        string            `json:"brokerAddr"`        // Broker 地址
-	BrokerName        string            `json:"brokerName"`        // Broker 名称
-	ClusterName       string            `json:"clusterName"`       // 集群名称
-	Version           string            `json:"version"`           // ACL 配置版本
-	AllAclFileVersion map[string]string `json:"allAclFileVersion"` // 所有 ACL 文件版本
+	BrokerAddr        string            `json:"brokerAddr"`
+	BrokerName        string            `json:"brokerName"`
+	ClusterName       string            `json:"clusterName"`
+	Version           string            `json:"version"`
+	AllAclFileVersion map[string]string `json:"allAclFileVersion"` // keyed by ACL file path
 }
 
-// =============================================================================
-// Broker 消费统计列表
-// =============================================================================
-
-// ConsumeStatsList Broker 消费统计列表（GET_BROKER_CONSUME_STATS 响应）
+// ConsumeStatsList is the response to GET_BROKER_CONSUME_STATS.
 type ConsumeStatsList struct {
-	BrokerAddr string                    `json:"brokerAddr"` // Broker 地址
-	TotalDiff  int64                     `json:"totalDiff"`  // 总差值
-	ConsumeStatsList []map[string]interface{} `json:"consumeStatsList"` // 消费统计列表
+	BrokerAddr       string                   `json:"brokerAddr"`
+	TotalDiff        int64                    `json:"totalDiff"` // total backlog across all groups
+	ConsumeStatsList []map[string]interface{} `json:"consumeStatsList"`
 }
 
-// =============================================================================
-// 消息轨迹
-// =============================================================================
-
-// MessageTrack 消息轨迹
+// MessageTrack records what one consumer group did with a message.
 type MessageTrack struct {
-	ConsumerGroup  string `json:"consumerGroup"`  // 消费者组
-	TrackType      string `json:"trackType"`      // 轨迹类型
-	ExceptionDesc  string `json:"exceptionDesc"`  // 异常描述
-	ConsumedStatus bool   `json:"consumedStatus"` // 消费状态
+	ConsumerGroup  string `json:"consumerGroup"`
+	TrackType      string `json:"trackType"`
+	ExceptionDesc  string `json:"exceptionDesc"`
+	ConsumedStatus bool   `json:"consumedStatus"`
 }
 
-// =============================================================================
-// 消费时间跨度
-// =============================================================================
-
-// ConsumeTimeSpan 消费时间跨度
+// ConsumeTimeSpan is how far one queue's consumption lags behind its messages.
 type ConsumeTimeSpan struct {
-	MinTimeStamp     int64        `json:"minTimeStamp"`     // 最小时间戳
-	MaxTimeStamp     int64        `json:"maxTimeStamp"`     // 最大时间戳
-	ConsumeTimeStamp int64        `json:"consumeTimeStamp"` // 消费时间戳
-	MessageQueue     MessageQueue `json:"messageQueue"`     // 消息队列
-	DelayTime        int64        `json:"delayTime"`        // 延迟时间
+	MinTimeStamp     int64        `json:"minTimeStamp"`
+	MaxTimeStamp     int64        `json:"maxTimeStamp"`
+	ConsumeTimeStamp int64        `json:"consumeTimeStamp"`
+	MessageQueue     MessageQueue `json:"messageQueue"`
+	DelayTime        int64        `json:"delayTime"`
 }
 
-// =============================================================================
-// 消费者运行时信息
-// =============================================================================
-
-// ConsumerRunningInfo 消费者运行时信息
+// ConsumerRunningInfo is a snapshot reported by a live consumer client.
 type ConsumerRunningInfo struct {
-	Properties      map[string]string        `json:"properties"`      // 属性
-	SubscriptionSet []SubscriptionData       `json:"subscriptionSet"` // 订阅集合
-	MqTable         map[string]ProcessQueue  `json:"mqTable"`         // 队列表
-	StatusTable     map[string]ConsumeStatus `json:"statusTable"`     // 状态表
-	JStack          string                   `json:"jstack"`          // 堆栈信息
+	Properties      map[string]string        `json:"properties"`
+	SubscriptionSet []SubscriptionData       `json:"subscriptionSet"`
+	MqTable         map[string]ProcessQueue  `json:"mqTable"` // keyed by MessageQueue
+	StatusTable     map[string]ConsumeStatus `json:"statusTable"`
+	JStack          string                   `json:"jstack"` // consumer-side thread dump
 }
 
-// SubscriptionDataExt 订阅数据扩展
+// SubscriptionDataExt is the subscription form used by consumer runtime info.
 type SubscriptionDataExt struct {
-	Topic           string   `json:"topic"`           // Topic
-	SubString       string   `json:"subString"`       // 订阅表达式
-	TagsSet         []string `json:"tagsSet"`         // Tag 集合
-	ClassFilterMode bool     `json:"classFilterMode"` // 类过滤模式
-	ExpressionType  string   `json:"expressionType"`  // 表达式类型
+	Topic           string   `json:"topic"`
+	SubString       string   `json:"subString"` // tag expression, or "*" for all
+	TagsSet         []string `json:"tagsSet"`
+	ClassFilterMode bool     `json:"classFilterMode"`
+	ExpressionType  string   `json:"expressionType"`
 }
 
-// ProcessQueue 处理队列
+// ProcessQueue is a consumer's local view of one queue it is processing.
 type ProcessQueue struct {
-	Locked          bool  `json:"locked"`          // 是否锁定
-	TryUnlockTimes  int64 `json:"tryUnlockTimes"`  // 尝试解锁次数
-	LastLockTime    int64 `json:"lastLockTime"`    // 最后锁定时间
-	Dropped         bool  `json:"dropped"`         // 是否丢弃
-	LastPullTime    int64 `json:"lastPullTime"`    // 最后拉取时间
-	LastConsumeTime int64 `json:"lastConsumeTime"` // 最后消费时间
-	MsgCount        int64 `json:"msgCount"`        // 消息数量
-	MsgSize         int64 `json:"msgSize"`         // 消息大小
+	Locked          bool  `json:"locked"`
+	TryUnlockTimes  int64 `json:"tryUnlockTimes"`
+	LastLockTime    int64 `json:"lastLockTime"`
+	Dropped         bool  `json:"dropped"` // rebalanced away; no longer consumed
+	LastPullTime    int64 `json:"lastPullTime"`
+	LastConsumeTime int64 `json:"lastConsumeTime"`
+	MsgCount        int64 `json:"msgCount"`
+	MsgSize         int64 `json:"msgSize"`
 }
 
-// ConsumeStatus 消费状态
+// ConsumeStatus is one consumer's throughput and latency counters.
 type ConsumeStatus struct {
-	PullRT            float64 `json:"pullRT"`            // 拉取 RT
-	PullTPS           float64 `json:"pullTPS"`           // 拉取 TPS
-	ConsumeRT         float64 `json:"consumeRT"`         // 消费 RT
-	ConsumeOKTPS      float64 `json:"consumeOKTPS"`      // 消费成功 TPS
-	ConsumeFailedTPS  float64 `json:"consumeFailedTPS"`  // 消费失败 TPS
-	ConsumeFailedMsgs int64   `json:"consumeFailedMsgs"` // 消费失败消息数
+	PullRT            float64 `json:"pullRT"` // pull response time
+	PullTPS           float64 `json:"pullTPS"`
+	ConsumeRT         float64 `json:"consumeRT"` // consume response time
+	ConsumeOKTPS      float64 `json:"consumeOKTPS"`
+	ConsumeFailedTPS  float64 `json:"consumeFailedTPS"`
+	ConsumeFailedMsgs int64   `json:"consumeFailedMsgs"`
 }
 
-// =============================================================================
-// 生产者连接信息
-// =============================================================================
-
-// ProducerConnection 生产者连接信息
+// ProducerConnection lists the live clients of one producer group.
 type ProducerConnection struct {
-	ConnectionSet []Connection `json:"connectionSet"` // 连接集合
+	ConnectionSet []Connection `json:"connectionSet"`
 }
 
-// =============================================================================
-// Broker HA 状态
-// =============================================================================
-
-// BrokerHAStatus Broker HA 状态
+// BrokerHAStatus is a master's view of its replication to slaves.
 type BrokerHAStatus struct {
-	MasterAddr      string           `json:"masterAddr"`      // Master 地址
-	HaMaxGap        int64            `json:"haMaxGap"`        // HA 最大差距
-	InSyncSlaveNum  int              `json:"inSyncSlaveNum"`  // 同步 Slave 数量
-	HaConnectionSet []HaClientStatus `json:"haConnectionSet"` // HA 连接状态
+	MasterAddr      string           `json:"masterAddr"`
+	HaMaxGap        int64            `json:"haMaxGap"` // largest offset gap across slaves
+	InSyncSlaveNum  int              `json:"inSyncSlaveNum"`
+	HaConnectionSet []HaClientStatus `json:"haConnectionSet"`
 }
 
-// HaClientStatus HA 客户端状态
+// HaClientStatus is the replication state of one slave.
 type HaClientStatus struct {
-	Addr              string `json:"addr"`              // 地址
-	TransferredOffset int64  `json:"transferredOffset"` // 已传输偏移
-	Diff              int64  `json:"diff"`              // 差距
-	InSync            bool   `json:"inSync"`            // 是否同步
+	Addr              string `json:"addr"`
+	TransferredOffset int64  `json:"transferredOffset"`
+	Diff              int64  `json:"diff"` // offsets behind the master
+	InSync            bool   `json:"inSync"`
 }
 
-// =============================================================================
-// Broker 统计数据
-// =============================================================================
-
-// BrokerStatsData Broker 统计数据
+// BrokerStatsData is one statistics series sampled over three windows.
 type BrokerStatsData struct {
-	StatsMinute BrokerStatsItem `json:"statsMinute"` // 分钟统计
-	StatsHour   BrokerStatsItem `json:"statsHour"`   // 小时统计
-	StatsDay    BrokerStatsItem `json:"statsDay"`    // 天统计
-	ClusterName string          `json:"clusterName"` // 集群名
-	BrokerName  string          `json:"brokerName"`  // Broker 名
+	StatsMinute BrokerStatsItem `json:"statsMinute"`
+	StatsHour   BrokerStatsItem `json:"statsHour"`
+	StatsDay    BrokerStatsItem `json:"statsDay"`
+	ClusterName string          `json:"clusterName"`
+	BrokerName  string          `json:"brokerName"`
 }
 
-// BrokerStatsItem Broker 统计项
+// BrokerStatsItem is one statistics window.
 type BrokerStatsItem struct {
-	Sum   int64   `json:"sum"`   // 总和
-	Tps   float64 `json:"tps"`   // TPS
-	Avgpt float64 `json:"avgpt"` // 平均 PT
+	Sum   int64   `json:"sum"`
+	Tps   float64 `json:"tps"`
+	Avgpt float64 `json:"avgpt"` // average processing time
 }
 
-// =============================================================================
-// 消息相关
-// =============================================================================
-
-// MessageExt 消息扩展信息
+// MessageExt is a stored message with the metadata the broker added to it.
 type MessageExt struct {
-	Topic          string            `json:"topic"`          // Topic
-	QueueId        int               `json:"queueId"`        // 队列 ID
-	QueueOffset    int64             `json:"queueOffset"`    // 队列偏移
-	MsgId          string            `json:"msgId"`          // 消息 ID
-	OffsetMsgId    string            `json:"offsetMsgId"`    // 偏移消息 ID
-	Body           []byte            `json:"body"`           // 消息体
-	Flag           int               `json:"flag"`           // 标志
-	BornTimestamp  int64             `json:"bornTimestamp"`  // 发送时间戳
-	StoreTimestamp int64             `json:"storeTimestamp"` // 存储时间戳
-	BornHost       string            `json:"bornHost"`       // 发送方
-	StoreHost      string            `json:"storeHost"`      // 存储方
-	SysFlag        int               `json:"sysFlag"`        // 系统标志
-	BrokerName     string            `json:"brokerName"`     // Broker 名称
-	Properties     map[string]string `json:"properties"`     // 属性
+	Topic          string            `json:"topic"`
+	QueueId        int               `json:"queueId"`
+	QueueOffset    int64             `json:"queueOffset"`
+	MsgId          string            `json:"msgId"`
+	OffsetMsgId    string            `json:"offsetMsgId"` // derived from the store host and CommitLog offset
+	Body           []byte            `json:"body"`
+	Flag           int               `json:"flag"`
+	BornTimestamp  int64             `json:"bornTimestamp"`
+	StoreTimestamp int64             `json:"storeTimestamp"`
+	BornHost       string            `json:"bornHost"`
+	StoreHost      string            `json:"storeHost"`
+	SysFlag        int               `json:"sysFlag"`
+	BrokerName     string            `json:"brokerName"`
+	Properties     map[string]string `json:"properties"`
 }

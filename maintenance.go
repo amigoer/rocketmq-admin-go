@@ -8,11 +8,7 @@ import (
 	"github.com/amigoer/rocketmq-admin-go/protocol/remoting"
 )
 
-// =============================================================================
-// 高级清理操作
-// =============================================================================
-
-// CleanExpiredConsumerQueue 清理过期消费队列
+// CleanExpiredConsumerQueue cleans expired consume queues on every Broker in a cluster.
 func (c *Client) CleanExpiredConsumerQueue(ctx context.Context, clusterName string) error {
 	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
@@ -40,7 +36,7 @@ func (c *Client) CleanExpiredConsumerQueue(ctx context.Context, clusterName stri
 	return nil
 }
 
-// CleanExpiredConsumerQueueByAddr 按地址清理过期消费队列
+// CleanExpiredConsumerQueueByAddr cleans expired consume queues on one Broker.
 func (c *Client) CleanExpiredConsumerQueueByAddr(ctx context.Context, brokerAddr string) error {
 	cmd := remoting.NewRequest(remoting.CleanExpiredConsumeQueue, nil)
 
@@ -56,7 +52,7 @@ func (c *Client) CleanExpiredConsumerQueueByAddr(ctx context.Context, brokerAddr
 	return nil
 }
 
-// DeleteExpiredCommitLog 删除过期 CommitLog
+// DeleteExpiredCommitLog deletes expired CommitLog files across a cluster.
 func (c *Client) DeleteExpiredCommitLog(ctx context.Context, clusterName string) error {
 	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
@@ -84,7 +80,7 @@ func (c *Client) DeleteExpiredCommitLog(ctx context.Context, clusterName string)
 	return nil
 }
 
-// DeleteExpiredCommitLogByAddr 按地址删除过期 CommitLog
+// DeleteExpiredCommitLogByAddr deletes expired CommitLog files on one Broker.
 func (c *Client) DeleteExpiredCommitLogByAddr(ctx context.Context, brokerAddr string) error {
 	cmd := remoting.NewRequest(remoting.DeleteExpiredCommitLog, nil)
 
@@ -100,7 +96,7 @@ func (c *Client) DeleteExpiredCommitLogByAddr(ctx context.Context, brokerAddr st
 	return nil
 }
 
-// CleanUnusedTopic 清理未使用 Topic
+// CleanUnusedTopic drops unused topics across a cluster.
 func (c *Client) CleanUnusedTopic(ctx context.Context, clusterName string) error {
 	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
@@ -128,7 +124,7 @@ func (c *Client) CleanUnusedTopic(ctx context.Context, clusterName string) error
 	return nil
 }
 
-// CleanUnusedTopicByAddr 按地址清理未使用 Topic
+// CleanUnusedTopicByAddr drops unused topics on one Broker.
 func (c *Client) CleanUnusedTopicByAddr(ctx context.Context, brokerAddr string) error {
 	cmd := remoting.NewRequest(remoting.CleanUnusedTopic, nil)
 
@@ -144,12 +140,8 @@ func (c *Client) CleanUnusedTopicByAddr(ctx context.Context, brokerAddr string) 
 	return nil
 }
 
-// =============================================================================
-// CommitLog 预读
-// =============================================================================
-
-// SetCommitLogReadAheadMode 设置 CommitLog 预读模式
-// mode: 0-关闭, 1-顺序预读, 2-随机预读
+// SetCommitLogReadAheadMode sets the CommitLog read-ahead mode on one Broker:
+// 0 off, 1 sequential, 2 random.
 func (c *Client) SetCommitLogReadAheadMode(ctx context.Context, brokerAddr string, mode int) error {
 	extFields := map[string]string{
 		"readAheadMode": fmt.Sprintf("%d", mode),
@@ -168,7 +160,8 @@ func (c *Client) SetCommitLogReadAheadMode(ctx context.Context, brokerAddr strin
 	return nil
 }
 
-// SetCommitLogReadAheadModeInCluster 在集群中设置 CommitLog 预读模式
+// SetCommitLogReadAheadModeInCluster sets the read-ahead mode on every Broker
+// in a cluster, stopping at the first failure.
 func (c *Client) SetCommitLogReadAheadModeInCluster(ctx context.Context, clusterName string, mode int) error {
 	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
@@ -196,21 +189,17 @@ func (c *Client) SetCommitLogReadAheadModeInCluster(ctx context.Context, cluster
 	return nil
 }
 
-// =============================================================================
-// RocksDB 配置
-// =============================================================================
-
-// RocksDBConfig RocksDB 配置
+// RocksDBConfig is a Broker's RocksDB store tuning.
 type RocksDBConfig struct {
-	BlockCacheSize       int64  `json:"blockCacheSize"`       // 块缓存大小
-	WriteBufferSize      int64  `json:"writeBufferSize"`      // 写缓冲区大小
-	MaxWriteBufferNumber int    `json:"maxWriteBufferNumber"` // 最大写缓冲区数
-	Level0FileNumCompact int    `json:"level0FileNumCompact"` // L0 文件数触发压缩
-	MaxBackgroundJobs    int    `json:"maxBackgroundJobs"`    // 最大后台任务数
-	CompactionStyle      string `json:"compactionStyle"`      // 压缩风格
+	BlockCacheSize       int64  `json:"blockCacheSize"`
+	WriteBufferSize      int64  `json:"writeBufferSize"`
+	MaxWriteBufferNumber int    `json:"maxWriteBufferNumber"`
+	Level0FileNumCompact int    `json:"level0FileNumCompact"` // L0 file count that triggers compaction
+	MaxBackgroundJobs    int    `json:"maxBackgroundJobs"`
+	CompactionStyle      string `json:"compactionStyle"`
 }
 
-// ExportRocksDBConfigToJson 导出 RocksDB 配置为 JSON
+// ExportRocksDBConfigToJson returns a Broker's RocksDB configuration as JSON.
 func (c *Client) ExportRocksDBConfigToJson(ctx context.Context, brokerAddr string) (string, error) {
 	cmd := remoting.NewRequest(remoting.ExportRocksDBConfigToJson, nil)
 
@@ -226,16 +215,16 @@ func (c *Client) ExportRocksDBConfigToJson(ctx context.Context, brokerAddr strin
 	return string(resp.Body), nil
 }
 
-// RocksDBCQWriteProgress RocksDB CQ 写入进度
+// RocksDBCQWriteProgress is the RocksDB consume-queue write progress of one queue.
 type RocksDBCQWriteProgress struct {
-	Topic       string  `json:"topic"`       // Topic
-	QueueId     int     `json:"queueId"`     // 队列 ID
-	CqOffset    int64   `json:"cqOffset"`    // CQ 偏移
-	Progress    float64 `json:"progress"`    // 进度 (0-100)
-	IsCompleted bool    `json:"isCompleted"` // 是否完成
+	Topic       string  `json:"topic"`
+	QueueId     int     `json:"queueId"`
+	CqOffset    int64   `json:"cqOffset"`
+	Progress    float64 `json:"progress"` // percent, 0-100
+	IsCompleted bool    `json:"isCompleted"`
 }
 
-// CheckRocksdbCqWriteProgress 检查 RocksDB CQ 写入进度
+// CheckRocksdbCqWriteProgress reports RocksDB consume-queue write progress for a topic.
 func (c *Client) CheckRocksdbCqWriteProgress(ctx context.Context, brokerAddr, topic string) ([]RocksDBCQWriteProgress, error) {
 	extFields := map[string]string{
 		"topic": topic,
@@ -258,4 +247,3 @@ func (c *Client) CheckRocksdbCqWriteProgress(ctx context.Context, brokerAddr, to
 
 	return progress, nil
 }
-

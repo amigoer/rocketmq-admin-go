@@ -5,26 +5,25 @@ import (
 	"time"
 )
 
-// Options 客户端配置选项
+// Options configures a Client.
 type Options struct {
-	// NameServers NameServer 地址列表
+	// NameServers lists the NameServer addresses, e.g. "127.0.0.1:9876".
 	NameServers []string
 
-	// Timeout 请求超时时间
+	// Timeout bounds a single request.
 	Timeout time.Duration
 
-	// RetryTimes 重试次数
+	// RetryTimes is how often a failed request is retried.
 	RetryTimes int
 
-	// ACL 认证配置
+	// ACL credentials; leave empty to talk to a cluster without authentication.
 	AccessKey string
 	SecretKey string
 }
 
-// Option 配置选项函数类型
+// Option applies a single setting to Options.
 type Option func(*Options)
 
-// defaultOptions 返回默认配置
 func defaultOptions() *Options {
 	return &Options{
 		Timeout:    3 * time.Second,
@@ -32,7 +31,6 @@ func defaultOptions() *Options {
 	}
 }
 
-// validate 验证配置有效性
 func (o *Options) validate() error {
 	if len(o.NameServers) == 0 {
 		return errors.New("NameServers 不能为空")
@@ -40,32 +38,31 @@ func (o *Options) validate() error {
 	return nil
 }
 
-// WithNameServers 设置 NameServer 地址列表
+// WithNameServers sets the NameServer addresses.
 func WithNameServers(addrs []string) Option {
 	return func(o *Options) {
 		o.NameServers = addrs
 	}
 }
 
-// WithTimeout 设置请求超时时间
+// WithTimeout sets the per-request timeout.
 func WithTimeout(timeout time.Duration) Option {
 	return func(o *Options) {
 		o.Timeout = timeout
 	}
 }
 
-// WithRetryTimes 设置重试次数
+// WithRetryTimes sets the retry count for failed requests.
 func WithRetryTimes(times int) Option {
 	return func(o *Options) {
 		o.RetryTimes = times
 	}
 }
 
-// WithACL 设置 ACL 认证信息
+// WithACL sets the ACL credentials.
 func WithACL(accessKey, secretKey string) Option {
 	return func(o *Options) {
 		o.AccessKey = accessKey
 		o.SecretKey = secretKey
 	}
 }
-

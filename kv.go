@@ -8,11 +8,7 @@ import (
 	"github.com/amigoer/rocketmq-admin-go/protocol/remoting"
 )
 
-// =============================================================================
-// KV 配置管理
-// =============================================================================
-
-// PutKVConfig 存储 KV 配置
+// PutKVConfig stores value under namespace/key.
 func (c *Client) PutKVConfig(ctx context.Context, namespace, key, value string) error {
 	extFields := map[string]string{
 		"namespace": namespace,
@@ -33,7 +29,7 @@ func (c *Client) PutKVConfig(ctx context.Context, namespace, key, value string) 
 	return nil
 }
 
-// GetKVConfig 获取 KV 配置
+// GetKVConfig returns the value stored under namespace/key.
 func (c *Client) GetKVConfig(ctx context.Context, namespace, key string) (string, error) {
 	extFields := map[string]string{
 		"namespace": namespace,
@@ -50,12 +46,11 @@ func (c *Client) GetKVConfig(ctx context.Context, namespace, key string) (string
 		return "", NewAdminError(resp.Code, resp.Remark)
 	}
 
-	// RocketMQ 通过 ExtFields 返回 value
+	// RocketMQ returns the value in ExtFields; some responses carry it in the body.
 	if value, ok := resp.ExtFields["value"]; ok && value != "" {
 		return value, nil
 	}
 
-	// 如果 ExtFields 没有，尝试从 Body 解析
 	if len(resp.Body) > 0 {
 		var result struct {
 			Value string `json:"value"`
@@ -69,7 +64,7 @@ func (c *Client) GetKVConfig(ctx context.Context, namespace, key string) (string
 	return "", nil
 }
 
-// DeleteKVConfig 删除 KV 配置
+// DeleteKVConfig removes the value stored under namespace/key.
 func (c *Client) DeleteKVConfig(ctx context.Context, namespace, key string) error {
 	extFields := map[string]string{
 		"namespace": namespace,
@@ -89,7 +84,7 @@ func (c *Client) DeleteKVConfig(ctx context.Context, namespace, key string) erro
 	return nil
 }
 
-// GetKVListByNamespace 按命名空间获取 KV 列表
+// GetKVListByNamespace returns every key/value pair in a namespace.
 func (c *Client) GetKVListByNamespace(ctx context.Context, namespace string) (map[string]string, error) {
 	extFields := map[string]string{
 		"namespace": namespace,
@@ -113,12 +108,12 @@ func (c *Client) GetKVListByNamespace(ctx context.Context, namespace string) (ma
 	return result, nil
 }
 
-// CreateAndUpdateKVConfig 创建或更新 KV 配置（与 PutKVConfig 相同）
+// CreateAndUpdateKVConfig is an alias for PutKVConfig.
 func (c *Client) CreateAndUpdateKVConfig(ctx context.Context, namespace, key, value string) error {
 	return c.PutKVConfig(ctx, namespace, key, value)
 }
 
-// CreateOrUpdateOrderConf 创建或更新顺序配置
+// CreateOrUpdateOrderConf stores an ordered-topic configuration under key.
 func (c *Client) CreateOrUpdateOrderConf(ctx context.Context, key, value, namespace string) error {
 	return c.PutKVConfig(ctx, namespace, key, value)
 }

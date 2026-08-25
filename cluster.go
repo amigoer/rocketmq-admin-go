@@ -8,11 +8,7 @@ import (
 	"github.com/amigoer/rocketmq-admin-go/protocol/remoting"
 )
 
-// =============================================================================
-// 集群管理接口
-// =============================================================================
-
-// ExamineBrokerClusterInfo 查询集群信息
+// ExamineBrokerClusterInfo returns the cluster topology known to the NameServer.
 func (c *Client) ExamineBrokerClusterInfo(ctx context.Context) (*ClusterInfo, error) {
 	cmd := remoting.NewRequest(remoting.GetBrokerClusterInfo, nil)
 
@@ -25,7 +21,7 @@ func (c *Client) ExamineBrokerClusterInfo(ctx context.Context) (*ClusterInfo, er
 		return nil, NewAdminError(resp.Code, resp.Remark)
 	}
 
-	// 修复 RocketMQ 返回的非标准 JSON（数字 key 没有引号）
+	// RocketMQ emits numeric map keys without quotes, which is not valid JSON.
 	fixedBody := fixJSONBody(resp.Body)
 
 	var clusterInfo ClusterInfo
@@ -38,16 +34,12 @@ func (c *Client) ExamineBrokerClusterInfo(ctx context.Context) (*ClusterInfo, er
 	return &clusterInfo, nil
 }
 
-// GetNameServerAddressList 获取 NameServer 地址列表
+// GetNameServerAddressList returns the configured NameServer addresses.
 func (c *Client) GetNameServerAddressList() []string {
 	return c.opts.NameServers
 }
 
-// =============================================================================
-// NameServer 配置管理
-// =============================================================================
-
-// UpdateNameServerConfig 更新 NameServer 配置
+// UpdateNameServerConfig applies the given properties to every NameServer.
 func (c *Client) UpdateNameServerConfig(ctx context.Context, properties map[string]string) error {
 	cmd := remoting.NewRequest(remoting.UpdateNamesrvConfig, properties)
 
@@ -63,7 +55,7 @@ func (c *Client) UpdateNameServerConfig(ctx context.Context, properties map[stri
 	return nil
 }
 
-// GetNameServerConfig 获取 NameServer 配置
+// GetNameServerConfig returns the NameServer configuration properties.
 func (c *Client) GetNameServerConfig(ctx context.Context) (map[string]string, error) {
 	cmd := remoting.NewRequest(remoting.GetNamesrvConfig, nil)
 
@@ -78,7 +70,7 @@ func (c *Client) GetNameServerConfig(ctx context.Context) (map[string]string, er
 
 	config := make(map[string]string)
 	if err := json.Unmarshal(resp.Body, &config); err != nil {
-		// 尝试作为字符串处理
+		// Not JSON: hand back the raw payload rather than failing.
 		if len(resp.Body) > 0 {
 			config["raw"] = string(resp.Body)
 		}

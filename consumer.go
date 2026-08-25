@@ -10,11 +10,7 @@ import (
 	"github.com/amigoer/rocketmq-admin-go/protocol/remoting"
 )
 
-// =============================================================================
-// 消费者组管理接口
-// =============================================================================
-
-// CreateSubscriptionGroup 创建订阅组
+// CreateSubscriptionGroup creates or updates a subscription group on one Broker.
 func (c *Client) CreateSubscriptionGroup(ctx context.Context, addr string, config SubscriptionGroupConfig) error {
 	extFields := map[string]string{
 		"groupName":                      config.GroupName,
@@ -42,7 +38,7 @@ func (c *Client) CreateSubscriptionGroup(ctx context.Context, addr string, confi
 	return nil
 }
 
-// DeleteSubscriptionGroup 删除订阅组
+// DeleteSubscriptionGroup removes a subscription group from one Broker.
 func (c *Client) DeleteSubscriptionGroup(ctx context.Context, addr, groupName string) error {
 	extFields := map[string]string{
 		"groupName": groupName,
@@ -61,7 +57,7 @@ func (c *Client) DeleteSubscriptionGroup(ctx context.Context, addr, groupName st
 	return nil
 }
 
-// ExamineSubscriptionGroupConfig 查询订阅组配置
+// ExamineSubscriptionGroupConfig returns one subscription group's configuration.
 func (c *Client) ExamineSubscriptionGroupConfig(ctx context.Context, addr, group string) (*SubscriptionGroupConfig, error) {
 	extFields := map[string]string{
 		"group": group,
@@ -85,15 +81,14 @@ func (c *Client) ExamineSubscriptionGroupConfig(ctx context.Context, addr, group
 	return &config, nil
 }
 
-// ExamineConsumeStats 查询消费统计
+// ExamineConsumeStats returns a consumer group's progress, merged across every
+// Broker in the cluster.
 func (c *Client) ExamineConsumeStats(ctx context.Context, consumerGroup string) (*ConsumeStats, error) {
-	// 先获取集群信息
 	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// 遍历所有 Broker 查询消费统计
 	result := &ConsumeStats{
 		OffsetTable: make(map[string]*OffsetWrapper),
 	}
@@ -128,7 +123,6 @@ func (c *Client) ExamineConsumeStats(ctx context.Context, consumerGroup string) 
 			continue
 		}
 
-		// 合并结果
 		for k, v := range stats.OffsetTable {
 			result.OffsetTable[k] = v
 		}
@@ -138,15 +132,14 @@ func (c *Client) ExamineConsumeStats(ctx context.Context, consumerGroup string) 
 	return result, nil
 }
 
-// ExamineConsumerConnectionInfo 查询消费者连接信息
+// ExamineConsumerConnectionInfo returns the live connections of a consumer group.
 func (c *Client) ExamineConsumerConnectionInfo(ctx context.Context, consumerGroup string) (*ConsumerConnection, error) {
-	// 先获取集群信息
 	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// 尝试从任意 Broker 获取消费者连接信息
+	// Any Broker holding the group can answer; try them in turn.
 	for _, brokerData := range clusterInfo.BrokerAddrTable {
 		var brokerAddr string
 		for _, addr := range brokerData.BrokerAddrs {
@@ -187,9 +180,8 @@ func (c *Client) ExamineConsumerConnectionInfo(ctx context.Context, consumerGrou
 	return nil, ErrConsumerGroupNotFound
 }
 
-// ExamineConsumeStatsByTopic 按 Topic 过滤查询消费统计
+// ExamineConsumeStatsByTopic returns a consumer group's progress on one topic only.
 func (c *Client) ExamineConsumeStatsByTopic(ctx context.Context, consumerGroup, topic string) (*ConsumeStats, error) {
-	// 获取集群信息
 	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		return nil, err
@@ -237,7 +229,7 @@ func (c *Client) ExamineConsumeStatsByTopic(ctx context.Context, consumerGroup, 
 	return result, nil
 }
 
-// FetchConsumeStatsInBroker 获取单个 Broker 上的所有消费统计
+// FetchConsumeStatsInBroker returns every consumer group's stats on one Broker.
 // Java: GET_BROKER_CONSUME_STATS = 317
 func (c *Client) FetchConsumeStatsInBroker(ctx context.Context, brokerAddr string, isOrder bool) (*ConsumeStatsList, error) {
 	extFields := map[string]string{
@@ -262,7 +254,7 @@ func (c *Client) FetchConsumeStatsInBroker(ctx context.Context, brokerAddr strin
 	return &result, nil
 }
 
-// QuerySubscription 查询消费者对某 Topic 的订阅详情
+// QuerySubscription returns one group's subscription to one topic.
 // Java: QUERY_SUBSCRIPTION_BY_CONSUMER = 345
 func (c *Client) QuerySubscription(ctx context.Context, consumerGroup, topic string) (*SubscriptionData, error) {
 	extFields := map[string]string{
@@ -271,7 +263,7 @@ func (c *Client) QuerySubscription(ctx context.Context, consumerGroup, topic str
 	}
 	cmd := remoting.NewRequest(remoting.QuerySubscription, extFields)
 
-	// 获取集群信息找到 Broker
+	// Any Broker in the cluster can answer; try them in turn.
 	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		return nil, err
@@ -306,9 +298,9 @@ func (c *Client) QuerySubscription(ctx context.Context, consumerGroup, topic str
 	return nil, fmt.Errorf("未找到消费者组 %s 对 Topic %s 的订阅信息", consumerGroup, topic)
 }
 
-// GetConsumeStatus 获取消费状态（每个 queue 的 offset）
+// GetConsumeStatus returns each client's per-queue offsets for a consumer group.
 // Java: INVOKE_BROKER_TO_GET_CONSUMER_STATUS = 223
-// 通过 broker 转发到 consumer 客户端获取实时消费状态
+// The Broker forwards the request to the live consumer clients.
 func (c *Client) GetConsumeStatus(ctx context.Context, topic, consumerGroup, clientAddr string) (map[string]map[string]int64, error) {
 	extFields := map[string]string{
 		"topic": topic,
@@ -319,7 +311,7 @@ func (c *Client) GetConsumeStatus(ctx context.Context, topic, consumerGroup, cli
 	}
 	cmd := remoting.NewRequest(remoting.InvokeBrokerToGetConsumerStatus, extFields)
 
-	// 获取 Topic 路由找到 Broker
+	// Any Broker in the topic's route can forward; try them in turn.
 	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
 		return nil, err
@@ -341,7 +333,7 @@ func (c *Client) GetConsumeStatus(ctx context.Context, topic, consumerGroup, cli
 			continue
 		}
 
-		// 响应格式: map[clientId] -> map[queueKey] -> offset
+		// Response shape: clientId -> queueKey -> offset.
 		var statusTable map[string]map[string]int64
 		if err := json.Unmarshal(resp.Body, &statusTable); err != nil {
 			continue
@@ -355,13 +347,8 @@ func (c *Client) GetConsumeStatus(ctx context.Context, topic, consumerGroup, cli
 	return result, nil
 }
 
-// =============================================================================
-// Offset 管理接口
-// =============================================================================
-
-// ResetOffsetByTimestamp 按时间戳重置消费位点
+// ResetOffsetByTimestamp rewinds a consumer group's offsets to a timestamp.
 func (c *Client) ResetOffsetByTimestamp(ctx context.Context, topic, group string, timestamp int64, force bool) (map[MessageQueue]int64, error) {
-	// 获取 Topic 路由信息
 	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
 		return nil, err
@@ -397,25 +384,22 @@ func (c *Client) ResetOffsetByTimestamp(ctx context.Context, topic, group string
 			continue
 		}
 
-		// 解析重置结果
 		var offsetTable map[string]int64
 		if err := json.Unmarshal(resp.Body, &offsetTable); err != nil {
 			continue
 		}
 
-		// 转换为 MessageQueue 格式
-		// queueKey 格式: {"brokerName":"xxx","queueId":0,"topic":"xxx"} 或 brokerName-queueId
+		// queueKey is either a JSON MessageQueue or "brokerName-queueId".
 		for queueKey, offset := range offsetTable {
 			mq := MessageQueue{
 				Topic:      topic,
 				BrokerName: brokerData.BrokerName,
 			}
-			// 尝试从 JSON 格式解析
 			var mqParsed MessageQueue
 			if err := json.Unmarshal([]byte(queueKey), &mqParsed); err == nil {
 				mq = mqParsed
 			} else {
-				// 尝试从简单格式解析 queueId
+				// Fall back to the trailing queueId of the simple form.
 				parts := strings.Split(queueKey, "-")
 				if len(parts) >= 2 {
 					if qid, err := strconv.Atoi(parts[len(parts)-1]); err == nil {
@@ -430,13 +414,8 @@ func (c *Client) ResetOffsetByTimestamp(ctx context.Context, topic, group string
 	return result, nil
 }
 
-// =============================================================================
-// 消费者管理扩展
-// =============================================================================
-
-// GetConsumerRunningInfo 获取消费者运行时信息
+// GetConsumerRunningInfo asks one consumer client for its runtime snapshot.
 func (c *Client) GetConsumerRunningInfo(ctx context.Context, consumerGroup, clientId string, jstack bool) (*ConsumerRunningInfo, error) {
-	// 先获取消费者连接信息
 	connInfo, err := c.ExamineConsumerConnectionInfo(ctx, consumerGroup)
 	if err != nil {
 		return nil, err
@@ -446,7 +425,6 @@ func (c *Client) GetConsumerRunningInfo(ctx context.Context, consumerGroup, clie
 		return nil, ErrConsumerGroupNotFound
 	}
 
-	// 找到目标客户端
 	var targetConn *Connection
 	for _, conn := range connInfo.ConnectionSet {
 		if clientId == "" || conn.ClientId == clientId {
@@ -459,7 +437,6 @@ func (c *Client) GetConsumerRunningInfo(ctx context.Context, consumerGroup, clie
 		return nil, fmt.Errorf("客户端 %s 未找到", clientId)
 	}
 
-	// 向客户端发送请求获取运行时信息
 	extFields := map[string]string{
 		"consumerGroup": consumerGroup,
 		"clientId":      targetConn.ClientId,
@@ -467,7 +444,7 @@ func (c *Client) GetConsumerRunningInfo(ctx context.Context, consumerGroup, clie
 	}
 	cmd := remoting.NewRequest(remoting.GetConsumerRunningInfo, extFields)
 
-	// 获取集群信息找到 Broker
+	// The request goes through a Broker, which forwards it to the client.
 	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		return nil, err
@@ -500,7 +477,7 @@ func (c *Client) GetConsumerRunningInfo(ctx context.Context, consumerGroup, clie
 	return nil, fmt.Errorf("获取消费者运行信息失败")
 }
 
-// QueryTopicsByConsumer 查询消费者订阅的 Topic
+// QueryTopicsByConsumer returns the topics a consumer group subscribes to.
 func (c *Client) QueryTopicsByConsumer(ctx context.Context, consumerGroup string) (*TopicList, error) {
 	extFields := map[string]string{
 		"consumerGroup": consumerGroup,
@@ -524,9 +501,8 @@ func (c *Client) QueryTopicsByConsumer(ctx context.Context, consumerGroup string
 	return &topicList, nil
 }
 
-// QueryConsumeTimeSpan 查询消费时间跨度
+// QueryConsumeTimeSpan returns how far a group's consumption lags, per queue.
 func (c *Client) QueryConsumeTimeSpan(ctx context.Context, topic, consumerGroup string) ([]ConsumeTimeSpan, error) {
-	// 先获取 Topic 路由信息
 	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
 		return nil, err
@@ -567,7 +543,7 @@ func (c *Client) QueryConsumeTimeSpan(ctx context.Context, topic, consumerGroup 
 	return result, nil
 }
 
-// GetAllSubscriptionGroup 获取所有订阅组
+// GetAllSubscriptionGroup returns every subscription group on one Broker.
 func (c *Client) GetAllSubscriptionGroup(ctx context.Context, brokerAddr string) (map[string]*SubscriptionGroupConfig, error) {
 	cmd := remoting.NewRequest(remoting.GetAllSubscriptionGroupConfig, nil)
 
@@ -590,7 +566,7 @@ func (c *Client) GetAllSubscriptionGroup(ctx context.Context, brokerAddr string)
 	return wrapper.SubscriptionGroupTable, nil
 }
 
-// UpdateConsumeOffset 更新消费 Offset
+// UpdateConsumeOffset sets a consumer group's offset for one queue.
 func (c *Client) UpdateConsumeOffset(ctx context.Context, brokerAddr, consumerGroup, topic string, queueId int, offset int64) error {
 	extFields := map[string]string{
 		"consumerGroup": consumerGroup,
@@ -612,34 +588,32 @@ func (c *Client) UpdateConsumeOffset(ctx context.Context, brokerAddr, consumerGr
 	return nil
 }
 
-// =============================================================================
-// 高级消费者操作 (并发/批量)
-// =============================================================================
-
-// ExamineConsumeStatsConcurrent 并发查询消费统计
+// ExamineConsumeStatsConcurrent is an alias for ExamineConsumeStats. Despite
+// the name it is not concurrent, and topic is ignored.
 func (c *Client) ExamineConsumeStatsConcurrent(ctx context.Context, consumerGroup, topic string) (*ConsumeStats, error) {
-	// 内部实现与 ExamineConsumeStats 相同，但可扩展为真正并发
 	return c.ExamineConsumeStats(ctx, consumerGroup)
 }
 
-// QueryConsumeTimeSpanConcurrent 并发查询消费时间跨度
+// QueryConsumeTimeSpanConcurrent is an alias for QueryConsumeTimeSpan. Despite
+// the name it is not concurrent.
 func (c *Client) QueryConsumeTimeSpanConcurrent(ctx context.Context, topic, consumerGroup string) ([]ConsumeTimeSpan, error) {
 	return c.QueryConsumeTimeSpan(ctx, topic, consumerGroup)
 }
 
-// QueryTopicsByConsumerConcurrent 并发查询消费者订阅的 Topic
+// QueryTopicsByConsumerConcurrent is an alias for QueryTopicsByConsumer.
+// Despite the name it is not concurrent.
 func (c *Client) QueryTopicsByConsumerConcurrent(ctx context.Context, consumerGroup string) (*TopicList, error) {
 	return c.QueryTopicsByConsumer(ctx, consumerGroup)
 }
 
-// GetUserSubscriptionGroup 获取用户订阅组
+// GetUserSubscriptionGroup returns the subscription groups on one Broker,
+// excluding RocketMQ's own system groups.
 func (c *Client) GetUserSubscriptionGroup(ctx context.Context, brokerAddr string) (map[string]*SubscriptionGroupConfig, error) {
 	allGroups, err := c.GetAllSubscriptionGroup(ctx, brokerAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	// 过滤系统订阅组
 	userGroups := make(map[string]*SubscriptionGroupConfig)
 	for name, config := range allGroups {
 		if !isSystemGroup(name) {
@@ -650,7 +624,7 @@ func (c *Client) GetUserSubscriptionGroup(ctx context.Context, brokerAddr string
 	return userGroups, nil
 }
 
-// isSystemGroup 判断是否为系统消费组
+// isSystemGroup reports whether groupName is one of RocketMQ's built-in groups.
 func isSystemGroup(groupName string) bool {
 	systemGroups := []string{
 		"CID_ONSAPI_OWNER",
@@ -671,10 +645,9 @@ func isSystemGroup(groupName string) bool {
 	return false
 }
 
-// CloneGroupOffset 克隆消费组偏移
-// Java: CLONE_GROUP_OFFSET = 314，发送到 broker 由 broker 端执行克隆
+// CloneGroupOffset copies one consumer group's offsets onto another.
+// Java: CLONE_GROUP_OFFSET = 314; the Broker performs the copy.
 func (c *Client) CloneGroupOffset(ctx context.Context, srcGroup, destGroup, topic string, isOffline bool) error {
-	// 获取 Topic 路由找到所有 Broker
 	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
 		return fmt.Errorf("获取 Topic 路由信息失败: %w", err)
@@ -706,7 +679,8 @@ func (c *Client) CloneGroupOffset(ctx context.Context, srcGroup, destGroup, topi
 	return nil
 }
 
-// UpdateAndGetGroupReadForbidden 更新并获取组读取禁止状态
+// UpdateAndGetGroupReadForbidden sets a group's read permission on a topic and
+// returns the permission actually in force.
 // Java: UPDATE_AND_GET_GROUP_FORBIDDEN = 353
 func (c *Client) UpdateAndGetGroupReadForbidden(ctx context.Context, brokerAddr, groupName, topic string, readable bool) (bool, error) {
 	extFields := map[string]string{
@@ -725,7 +699,6 @@ func (c *Client) UpdateAndGetGroupReadForbidden(ctx context.Context, brokerAddr,
 		return false, NewAdminError(resp.Code, resp.Remark)
 	}
 
-	// 响应中返回实际的 readable 状态
 	if v, ok := resp.ExtFields["readable"]; ok {
 		return v == "true", nil
 	}
@@ -733,28 +706,24 @@ func (c *Client) UpdateAndGetGroupReadForbidden(ctx context.Context, brokerAddr,
 	return readable, nil
 }
 
-// =============================================================================
-// 冷数据流控
-// =============================================================================
-
-// ColdDataFlowCtrConfig 冷数据流控配置
+// ColdDataFlowCtrConfig throttles a consumer group's reads of cold data.
 type ColdDataFlowCtrConfig struct {
-	ConsumerGroup   string `json:"consumerGroup"`   // 消费者组
-	ThresholdPerSec int64  `json:"thresholdPerSec"` // 每秒阈值
-	GlobalThreshold int64  `json:"globalThreshold"` // 全局阈值
-	EnableFlowCtr   bool   `json:"enableFlowCtr"`   // 是否启用流控
+	ConsumerGroup   string `json:"consumerGroup"`
+	ThresholdPerSec int64  `json:"thresholdPerSec"`
+	GlobalThreshold int64  `json:"globalThreshold"`
+	EnableFlowCtr   bool   `json:"enableFlowCtr"`
 }
 
-// ColdDataFlowCtrInfo 冷数据流控信息
+// ColdDataFlowCtrInfo is a consumer group's current cold-data throttling state.
 type ColdDataFlowCtrInfo struct {
-	ConsumerGroup    string `json:"consumerGroup"`    // 消费者组
-	CurrentQPS       int64  `json:"currentQPS"`       // 当前 QPS
-	ThresholdPerSec  int64  `json:"thresholdPerSec"`  // 每秒阈值
-	IsFlowCtrEnabled bool   `json:"isFlowCtrEnabled"` // 是否启用
-	IsColdData       bool   `json:"isColdData"`       // 是否冷数据
+	ConsumerGroup    string `json:"consumerGroup"`
+	CurrentQPS       int64  `json:"currentQPS"`
+	ThresholdPerSec  int64  `json:"thresholdPerSec"`
+	IsFlowCtrEnabled bool   `json:"isFlowCtrEnabled"`
+	IsColdData       bool   `json:"isColdData"`
 }
 
-// UpdateColdDataFlowCtrGroupConfig 更新冷数据流控配置
+// UpdateColdDataFlowCtrGroupConfig applies a cold-data throttle on one Broker.
 func (c *Client) UpdateColdDataFlowCtrGroupConfig(ctx context.Context, brokerAddr string, config ColdDataFlowCtrConfig) error {
 	body, err := json.Marshal(config)
 	if err != nil {
@@ -776,7 +745,7 @@ func (c *Client) UpdateColdDataFlowCtrGroupConfig(ctx context.Context, brokerAdd
 	return nil
 }
 
-// RemoveColdDataFlowCtrGroupConfig 移除冷数据流控配置
+// RemoveColdDataFlowCtrGroupConfig removes a consumer group's cold-data throttle.
 func (c *Client) RemoveColdDataFlowCtrGroupConfig(ctx context.Context, brokerAddr, consumerGroup string) error {
 	extFields := map[string]string{
 		"consumerGroup": consumerGroup,
@@ -795,7 +764,7 @@ func (c *Client) RemoveColdDataFlowCtrGroupConfig(ctx context.Context, brokerAdd
 	return nil
 }
 
-// GetColdDataFlowCtrInfo 获取冷数据流控信息
+// GetColdDataFlowCtrInfo returns the cold-data throttling state of one Broker.
 func (c *Client) GetColdDataFlowCtrInfo(ctx context.Context, brokerAddr string) ([]ColdDataFlowCtrInfo, error) {
 	cmd := remoting.NewRequest(remoting.GetColdDataFlowCtrInfo, nil)
 
@@ -816,7 +785,8 @@ func (c *Client) GetColdDataFlowCtrInfo(ctx context.Context, brokerAddr string) 
 	return infos, nil
 }
 
-// UpdateColdDataFlowCtrGroupConfigInCluster 在集群中更新冷数据流控配置
+// UpdateColdDataFlowCtrGroupConfigInCluster applies a cold-data throttle to
+// every Broker in a cluster, stopping at the first failure.
 func (c *Client) UpdateColdDataFlowCtrGroupConfigInCluster(ctx context.Context, clusterName string, config ColdDataFlowCtrConfig) error {
 	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
 	if err != nil {

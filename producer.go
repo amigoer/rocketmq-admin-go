@@ -8,19 +8,14 @@ import (
 	"github.com/amigoer/rocketmq-admin-go/protocol/remoting"
 )
 
-// =============================================================================
-// 生产者管理
-// =============================================================================
-
-// ExamineProducerConnectionInfo 查询生产者连接信息
+// ExamineProducerConnectionInfo returns the connections of a producer group on a topic.
 func (c *Client) ExamineProducerConnectionInfo(ctx context.Context, producerGroup, topic string) (*ProducerConnection, error) {
-	// 先获取集群信息
 	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// 尝试从任意 Broker 获取生产者连接信息
+	// Any Broker holding the group can answer; try them in turn.
 	for _, brokerData := range clusterInfo.BrokerAddrTable {
 		var brokerAddr string
 		for _, addr := range brokerData.BrokerAddrs {
@@ -58,7 +53,7 @@ func (c *Client) ExamineProducerConnectionInfo(ctx context.Context, producerGrou
 	return nil, fmt.Errorf("未找到生产者组 %s 的连接信息", producerGroup)
 }
 
-// GetAllProducerInfo 获取所有生产者信息
+// GetAllProducerInfo returns every producer group connected to one Broker.
 func (c *Client) GetAllProducerInfo(ctx context.Context, brokerAddr string) (map[string][]Connection, error) {
 	cmd := remoting.NewRequest(remoting.GetProducerInfo, nil)
 

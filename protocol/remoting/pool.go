@@ -1,4 +1,3 @@
-// Package remoting 连接池管理
 package remoting
 
 import (
@@ -7,14 +6,14 @@ import (
 	"time"
 )
 
-// ConnectionPool 连接池
+// ConnectionPool caches one Client per server address.
 type ConnectionPool struct {
 	mu          sync.RWMutex
 	connections map[string]*Client // key: addr
 	timeout     time.Duration
 }
 
-// NewConnectionPool 创建连接池
+// NewConnectionPool creates an empty pool using timeout for dials and requests.
 func NewConnectionPool(timeout time.Duration) *ConnectionPool {
 	return &ConnectionPool{
 		connections: make(map[string]*Client),
@@ -22,7 +21,7 @@ func NewConnectionPool(timeout time.Duration) *ConnectionPool {
 	}
 }
 
-// GetOrCreate 获取或创建连接
+// GetOrCreate returns the pooled connection for addr, dialing if there is none.
 func (p *ConnectionPool) GetOrCreate(addr string) (*Client, error) {
 	p.mu.RLock()
 	client, exists := p.connections[addr]
@@ -35,12 +34,11 @@ func (p *ConnectionPool) GetOrCreate(addr string) (*Client, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	// 双重检查
+	// Re-check: another goroutine may have connected while we waited for the lock.
 	if client, exists = p.connections[addr]; exists && client.IsConnected() {
 		return client, nil
 	}
 
-	// 创建新连接
 	client = NewClient(addr, p.timeout)
 	if err := client.Connect(); err != nil {
 		return nil, fmt.Errorf("连接 %s 失败: %w", addr, err)
@@ -50,7 +48,7 @@ func (p *ConnectionPool) GetOrCreate(addr string) (*Client, error) {
 	return client, nil
 }
 
-// Close 关闭所有连接
+// Close closes every pooled connection and empties the pool.
 func (p *ConnectionPool) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -65,7 +63,7 @@ func (p *ConnectionPool) Close() error {
 	return lastErr
 }
 
-// Remove 移除指定连接
+// Remove closes the connection for addr and drops it from the pool.
 func (p *ConnectionPool) Remove(addr string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()

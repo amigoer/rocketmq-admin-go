@@ -8,11 +8,7 @@ import (
 	"github.com/amigoer/rocketmq-admin-go/protocol/remoting"
 )
 
-// =============================================================================
-// Topic 管理接口
-// =============================================================================
-
-// CreateTopic 创建 Topic
+// CreateTopic creates or updates a topic on one Broker.
 func (c *Client) CreateTopic(ctx context.Context, addr string, config TopicConfig) error {
 	extFields := map[string]string{
 		"topic":           config.TopicName,
@@ -38,15 +34,14 @@ func (c *Client) CreateTopic(ctx context.Context, addr string, config TopicConfi
 	return nil
 }
 
-// DeleteTopic 删除 Topic
+// DeleteTopic removes a topic from every Broker in a cluster, then drops its
+// route from the NameServer.
 func (c *Client) DeleteTopic(ctx context.Context, topicName, clusterName string) error {
-	// 1. 先获取集群信息，找到所有 Broker
 	clusterInfo, err := c.ExamineBrokerClusterInfo(ctx)
 	if err != nil {
 		return fmt.Errorf("获取集群信息失败: %w", err)
 	}
 
-	// 2. 在所有 Broker 上删除 Topic
 	brokerNames, ok := clusterInfo.ClusterAddrTable[clusterName]
 	if !ok {
 		return fmt.Errorf("集群 %s 不存在", clusterName)
@@ -58,7 +53,7 @@ func (c *Client) DeleteTopic(ctx context.Context, topicName, clusterName string)
 			continue
 		}
 
-		// 向 Master Broker 发送删除请求
+		// Broker id "0" is the master.
 		if masterAddr, ok := brokerData.BrokerAddrs["0"]; ok {
 			extFields := map[string]string{
 				"topic": topicName,
@@ -71,7 +66,6 @@ func (c *Client) DeleteTopic(ctx context.Context, topicName, clusterName string)
 		}
 	}
 
-	// 3. 在 NameServer 删除 Topic
 	extFields := map[string]string{
 		"topic": topicName,
 	}
@@ -84,7 +78,7 @@ func (c *Client) DeleteTopic(ctx context.Context, topicName, clusterName string)
 	return nil
 }
 
-// FetchAllTopicList 获取所有 Topic 列表
+// FetchAllTopicList returns every topic known to the NameServer.
 func (c *Client) FetchAllTopicList(ctx context.Context) (*TopicList, error) {
 	cmd := remoting.NewRequest(remoting.GetAllTopicListFromNamesrv, nil)
 
@@ -105,7 +99,7 @@ func (c *Client) FetchAllTopicList(ctx context.Context) (*TopicList, error) {
 	return &topicList, nil
 }
 
-// FetchTopicsByCluster 按集群获取 Topic 列表
+// FetchTopicsByCluster returns the topics belonging to one cluster.
 func (c *Client) FetchTopicsByCluster(ctx context.Context, clusterName string) (*TopicList, error) {
 	extFields := map[string]string{
 		"clusterName": clusterName,
@@ -129,7 +123,7 @@ func (c *Client) FetchTopicsByCluster(ctx context.Context, clusterName string) (
 	return &topicList, nil
 }
 
-// ExamineTopicRouteInfo 查询 Topic 路由信息
+// ExamineTopicRouteInfo returns a topic's route from the NameServer.
 func (c *Client) ExamineTopicRouteInfo(ctx context.Context, topic string) (*TopicRouteData, error) {
 	extFields := map[string]string{
 		"topic": topic,
@@ -149,7 +143,7 @@ func (c *Client) ExamineTopicRouteInfo(ctx context.Context, topic string) (*Topi
 		return nil, NewAdminError(resp.Code, resp.Remark)
 	}
 
-	// 修复 RocketMQ 返回的非标准 JSON（数字 key 没有引号）
+	// RocketMQ emits numeric map keys without quotes, which is not valid JSON.
 	fixedBody := fixJSONBody(resp.Body)
 
 	var routeData TopicRouteData
@@ -157,15 +151,14 @@ func (c *Client) ExamineTopicRouteInfo(ctx context.Context, topic string) (*Topi
 		return nil, fmt.Errorf("解析 Topic 路由失败: %w", err)
 	}
 
-	// 记录名称到地址的映射，后续访问这些 Broker 时才能填上 bname。
+	// Record name-to-address pairs so later requests to these Brokers carry bname.
 	c.rememberRouteBrokerNames(&routeData)
 
 	return &routeData, nil
 }
 
-// ExamineTopicStats 查询 Topic 统计信息
+// ExamineTopicStats returns per-queue offsets for a topic.
 func (c *Client) ExamineTopicStats(ctx context.Context, topic string) (*TopicStatsTable, error) {
-	// 先获取路由信息
 	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
 		return nil, err
@@ -175,7 +168,7 @@ func (c *Client) ExamineTopicStats(ctx context.Context, topic string) (*TopicSta
 		return nil, ErrBrokerNotFound
 	}
 
-	// 向第一个 Broker 查询统计信息
+	// Stats come from the first Broker in the route only.
 	brokerData := routeData.BrokerDatas[0]
 	var brokerAddr string
 	for _, addr := range brokerData.BrokerAddrs {
@@ -197,7 +190,7 @@ func (c *Client) ExamineTopicStats(ctx context.Context, topic string) (*TopicSta
 		return nil, NewAdminError(resp.Code, resp.Remark)
 	}
 
-	// 修复 RocketMQ 返回的非标准 JSON（数字 key 没有引号）
+	// RocketMQ emits numeric map keys without quotes, which is not valid JSON.
 	fixedBody := fixJSONBody(resp.Body)
 
 	var statsTable TopicStatsTable
@@ -208,11 +201,7 @@ func (c *Client) ExamineTopicStats(ctx context.Context, topic string) (*TopicSta
 	return &statsTable, nil
 }
 
-// =============================================================================
-// Topic 管理扩展
-// =============================================================================
-
-// DeleteTopicInBroker 在 Broker 中删除 Topic
+// DeleteTopicInBroker removes a topic from one Broker, leaving its route intact.
 func (c *Client) DeleteTopicInBroker(ctx context.Context, brokerAddr, topic string) error {
 	extFields := map[string]string{
 		"topic": topic,
@@ -231,7 +220,7 @@ func (c *Client) DeleteTopicInBroker(ctx context.Context, brokerAddr, topic stri
 	return nil
 }
 
-// DeleteTopicInNameServer 在 NameServer 中删除 Topic
+// DeleteTopicInNameServer removes a topic's route, leaving Broker data intact.
 func (c *Client) DeleteTopicInNameServer(ctx context.Context, topic string) error {
 	extFields := map[string]string{
 		"topic": topic,
@@ -250,7 +239,7 @@ func (c *Client) DeleteTopicInNameServer(ctx context.Context, topic string) erro
 	return nil
 }
 
-// ExamineTopicConfig 查询单个 Topic 配置
+// ExamineTopicConfig returns one topic's configuration from one Broker.
 // Java: GET_TOPIC_CONFIG = 351
 func (c *Client) ExamineTopicConfig(ctx context.Context, brokerAddr, topic string) (*TopicConfig, error) {
 	extFields := map[string]string{
@@ -275,14 +264,13 @@ func (c *Client) ExamineTopicConfig(ctx context.Context, brokerAddr, topic strin
 	return &config, nil
 }
 
-// QueryTopicConsumeByWho 查询 Topic 被哪些消费者消费
+// QueryTopicConsumeByWho returns the consumer groups subscribed to a topic.
 func (c *Client) QueryTopicConsumeByWho(ctx context.Context, topic string) ([]string, error) {
 	extFields := map[string]string{
 		"topic": topic,
 	}
 	cmd := remoting.NewRequest(remoting.QueryTopicConsumeByWho, extFields)
 
-	// 先获取路由信息
 	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
 		return nil, err
@@ -292,7 +280,7 @@ func (c *Client) QueryTopicConsumeByWho(ctx context.Context, topic string) ([]st
 		return nil, ErrBrokerNotFound
 	}
 
-	// 向第一个 Broker 查询
+	// Any Broker in the route can answer; use the first.
 	brokerData := routeData.BrokerDatas[0]
 	var brokerAddr string
 	for _, addr := range brokerData.BrokerAddrs {
@@ -319,7 +307,7 @@ func (c *Client) QueryTopicConsumeByWho(ctx context.Context, topic string) ([]st
 	return groups.GroupList, nil
 }
 
-// GetAllTopicConfig 获取所有 Topic 配置
+// GetAllTopicConfig returns every topic configuration held by one Broker.
 func (c *Client) GetAllTopicConfig(ctx context.Context, brokerAddr string) (map[string]*TopicConfig, error) {
 	cmd := remoting.NewRequest(remoting.GetAllTopicConfig, nil)
 
@@ -342,7 +330,8 @@ func (c *Client) GetAllTopicConfig(ctx context.Context, brokerAddr string) (map[
 	return wrapper.TopicConfigTable, nil
 }
 
-// CreateAndUpdateTopicConfigList 批量创建/更新 Topic 配置
+// CreateAndUpdateTopicConfigList creates or updates several topics on one
+// Broker, stopping at the first failure.
 func (c *Client) CreateAndUpdateTopicConfigList(ctx context.Context, brokerAddr string, configs []TopicConfig) error {
 	for _, config := range configs {
 		if err := c.CreateTopic(ctx, brokerAddr, config); err != nil {
@@ -352,7 +341,7 @@ func (c *Client) CreateAndUpdateTopicConfigList(ctx context.Context, brokerAddr 
 	return nil
 }
 
-// GetTopicClusterList 获取 Topic 所属集群列表
+// GetTopicClusterList returns the clusters a topic is routed to.
 func (c *Client) GetTopicClusterList(ctx context.Context, topic string) ([]string, error) {
 	routeData, err := c.ExamineTopicRouteInfo(ctx, topic)
 	if err != nil {
@@ -374,11 +363,7 @@ func (c *Client) GetTopicClusterList(ctx context.Context, topic string) ([]strin
 	return clusters, nil
 }
 
-// =============================================================================
-// 高级 Topic 操作
-// =============================================================================
-
-// CreateStaticTopic 创建静态 Topic
+// CreateStaticTopic creates a static (logical queue) topic on one Broker.
 func (c *Client) CreateStaticTopic(ctx context.Context, brokerAddr, topic string, queueNum int, mappingDetail string) error {
 	extFields := map[string]string{
 		"topic":         topic,
@@ -399,8 +384,8 @@ func (c *Client) CreateStaticTopic(ctx context.Context, brokerAddr, topic string
 	return nil
 }
 
-// ExamineTopicStatsConcurrent 并发查询 Topic 统计
+// ExamineTopicStatsConcurrent is an alias for ExamineTopicStats. Despite the
+// name it is not concurrent yet.
 func (c *Client) ExamineTopicStatsConcurrent(ctx context.Context, topic string) (*TopicStatsTable, error) {
-	// 内部实现与 ExamineTopicStats 相同，但可扩展为真正并发
 	return c.ExamineTopicStats(ctx, topic)
 }
