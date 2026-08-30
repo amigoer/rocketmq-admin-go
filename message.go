@@ -462,7 +462,10 @@ func (c *Client) QueryMessage(ctx context.Context, topic, key string, maxNum int
 		return nil, err
 	}
 
-	var allMessages []*MessageExt
+	var (
+		allMessages []*MessageExt
+		lastErr     error
+	)
 	for _, brokerData := range routeData.BrokerDatas {
 		// Only masters answer message queries.
 		brokerAddr := brokerData.BrokerAddrs["0"]
@@ -471,20 +474,22 @@ func (c *Client) QueryMessage(ctx context.Context, topic, key string, maxNum int
 		}
 
 		extFields := map[string]string{
-			"topic":  topic,
-			"key":    key,
-			"maxNum": fmt.Sprintf("%d", maxNum),
-			"begin":  fmt.Sprintf("%d", begin),
-			"end":    fmt.Sprintf("%d", end),
+			"topic":          topic,
+			"key":            key,
+			"maxNum":         fmt.Sprintf("%d", maxNum),
+			"beginTimestamp": fmt.Sprintf("%d", begin),
+			"endTimestamp":   fmt.Sprintf("%d", end),
 		}
 
 		cmd := remoting.NewRequest(remoting.QueryMessage, extFields)
 		resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
 		if err != nil {
+			lastErr = err
 			continue
 		}
 
 		if resp.Code != remoting.Success {
+			lastErr = NewAdminError(resp.Code, resp.Remark)
 			continue
 		}
 
@@ -510,6 +515,12 @@ func (c *Client) QueryMessage(ctx context.Context, topic, key string, maxNum int
 				allMessages = append(allMessages, msg)
 			}
 		}
+	}
+
+	// A broker that refused the query must not read as "no messages": the
+	// caller cannot tell those apart, and "not found" is the wrong one.
+	if len(allMessages) == 0 && lastErr != nil {
+		return nil, fmt.Errorf("failed to query message by key: %w", lastErr)
 	}
 
 	return allMessages, nil
