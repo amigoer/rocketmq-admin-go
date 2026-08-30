@@ -12,7 +12,7 @@ code lives in [`protocol/remoting`](../protocol/remoting).
 ```text
 +----------------+----------------+---------------------+----------------+
 |  Total Length  |  Header Length |     Header Data     |      Body      |
-|    (4 Bytes)   |    (4 Bytes)   |  (JSON Serialized)  |  (Byte Array)  |
+|    (4 Bytes)   |    (4 Bytes)   |  (JSON or binary)   |  (Byte Array)  |
 +----------------+----------------+---------------------+----------------+
 ```
 
@@ -25,10 +25,14 @@ values at once:
 
 - low 24 bits: the length of the header
 - high 8 bits: the serialization type — `0` for JSON, `1` for RocketMQ's own
-  compact format. Only JSON is implemented here.
+  compact binary format. Requests always go out as JSON; both are decoded,
+  because a response is encoded by whoever produced it. A Broker relaying a
+  Java client's answer — `GET_CONSUMER_RUNNING_INFO` is the one that matters —
+  hands back a binary header.
 
-**Header Data** — the JSON encoding of `RemotingCommand`: request code,
-language, version, request id (`Opaque`) and the header fields (`ExtFields`).
+**Header Data** — `RemotingCommand`: request code, language, version, request
+id (`Opaque`) and the header fields (`ExtFields`), in whichever of the two
+encodings the type byte names.
 
 **Body** — raw bytes. The payload: message content, route data, and so on.
 
@@ -98,14 +102,27 @@ func Decode(data []byte) (*RemotingCommand, error) {
 	}
 
 	// The top byte holds the serialize type; the rest is the header length.
-	headerLen := int(binary.BigEndian.Uint32(data[0:4]) & 0x00FFFFFF)
+	word := binary.BigEndian.Uint32(data[0:4])
+	headerLen := int(word & 0x00FFFFFF)
 
 	if len(data) < 4+headerLen {
 		return nil, ErrInvalidData
 	}
 
-	cmd := &RemotingCommand{}
-	if err := json.Unmarshal(data[4:4+headerLen], cmd); err != nil {
+	var (
+		cmd *RemotingCommand
+		err error
+	)
+	switch byte(word >> 24) {
+	case JSONSerializeType:
+		cmd = &RemotingCommand{}
+		err = json.Unmarshal(data[4:4+headerLen], cmd)
+	case RocketMQSerializeType:
+		cmd, err = decodeBinaryHeader(data[4 : 4+headerLen])
+	default:
+		return nil, ErrUnknownSerializeType
+	}
+	if err != nil {
 		return nil, err
 	}
 
@@ -119,7 +136,21 @@ func Decode(data []byte) (*RemotingCommand, error) {
 
 `Decode` expects the leading total-length word to have already been consumed by
 the read loop, which needs it to know how many bytes to read. Masking with
-`0x00FFFFFF` drops the serialize-type byte and leaves the header length.
+`0x00FFFFFF` leaves the header length; the byte that was masked off decides
+which of the two header encodings to read.
+
+The binary one is fixed-order fields, big endian, with the two variable parts
+length-prefixed:
+
+```text
+code int16 | language int8 | version int16 | opaque int32 | flag int32 |
+remarkLen int32 + remark | extFieldsLen int32 + extFields
+```
+
+`extFields` is itself a run of `keyLen int16 + key + valueLen int32 + value`.
+Getting this wrong is invisible rather than loud: the read loop cannot match a
+header it failed to parse to any waiting request, so the caller sits there until
+its context expires.
 
 ## 5. Request and response flow
 
