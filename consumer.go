@@ -450,31 +450,51 @@ func (c *Client) GetConsumerRunningInfo(ctx context.Context, consumerGroup, clie
 		return nil, err
 	}
 
+	// Only a Broker the client heartbeats to can forward the request, so every
+	// one of them is tried; the master answers for the clients it knows.
+	var lastErr error
 	for _, brokerData := range clusterInfo.BrokerAddrTable {
-		var brokerAddr string
-		for _, addr := range brokerData.BrokerAddrs {
-			brokerAddr = addr
-			break
-		}
+		for _, brokerAddr := range masterFirst(brokerData.BrokerAddrs) {
+			resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
+			if err != nil {
+				lastErr = err
+				continue
+			}
 
-		resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
-		if err != nil {
-			continue
-		}
+			if resp.Code != remoting.Success {
+				lastErr = NewAdminError(resp.Code, resp.Remark)
+				continue
+			}
 
-		if resp.Code != remoting.Success {
-			continue
-		}
+			// The body carries mqTable, a Fastjson map keyed by MessageQueue
+			// objects, so it is not standard JSON until fixJSONBody runs.
+			var runningInfo ConsumerRunningInfo
+			if err := json.Unmarshal(fixJSONBody(resp.Body), &runningInfo); err != nil {
+				return nil, fmt.Errorf("failed to parse consumer running info: %w", err)
+			}
 
-		var runningInfo ConsumerRunningInfo
-		if err := json.Unmarshal(resp.Body, &runningInfo); err != nil {
-			continue
+			return &runningInfo, nil
 		}
-
-		return &runningInfo, nil
 	}
 
+	if lastErr != nil {
+		return nil, fmt.Errorf("failed to get consumer running info: %w", lastErr)
+	}
 	return nil, fmt.Errorf("failed to get consumer running info")
+}
+
+// masterFirst orders one Broker set's addresses with broker id 0 in front.
+func masterFirst(addrs map[string]string) []string {
+	ordered := make([]string, 0, len(addrs))
+	if master, ok := addrs["0"]; ok {
+		ordered = append(ordered, master)
+	}
+	for id, addr := range addrs {
+		if id != "0" {
+			ordered = append(ordered, addr)
+		}
+	}
+	return ordered
 }
 
 // QueryTopicsByConsumer returns the topics a consumer group subscribes to.

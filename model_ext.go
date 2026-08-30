@@ -99,15 +99,27 @@ type SubscriptionDataExt struct {
 }
 
 // ProcessQueue is a consumer's local view of one queue it is processing.
+//
+// The names are RocketMQ's ProcessQueueInfo, including its "droped" spelling:
+// this is the client's own snapshot, so anything else silently decodes to zero.
 type ProcessQueue struct {
-	Locked          bool  `json:"locked"`
-	TryUnlockTimes  int64 `json:"tryUnlockTimes"`
-	LastLockTime    int64 `json:"lastLockTime"`
-	Dropped         bool  `json:"dropped"` // rebalanced away; no longer consumed
-	LastPullTime    int64 `json:"lastPullTime"`
-	LastConsumeTime int64 `json:"lastConsumeTime"`
-	MsgCount        int64 `json:"msgCount"`
-	MsgSize         int64 `json:"msgSize"`
+	CommitOffset       int64 `json:"commitOffset"`
+	CachedMsgMinOffset int64 `json:"cachedMsgMinOffset"`
+	CachedMsgMaxOffset int64 `json:"cachedMsgMaxOffset"`
+	CachedMsgCount     int64 `json:"cachedMsgCount"`
+	CachedMsgSizeInMiB int64 `json:"cachedMsgSizeInMiB"`
+
+	TransactionMsgMinOffset int64 `json:"transactionMsgMinOffset"`
+	TransactionMsgMaxOffset int64 `json:"transactionMsgMaxOffset"`
+	TransactionMsgCount     int64 `json:"transactionMsgCount"`
+
+	Locked            bool  `json:"locked"`
+	TryUnlockTimes    int64 `json:"tryUnlockTimes"`
+	LastLockTimestamp int64 `json:"lastLockTimestamp"`
+
+	Dropped              bool  `json:"droped"` // rebalanced away; no longer consumed
+	LastPullTimestamp    int64 `json:"lastPullTimestamp"`
+	LastConsumeTimestamp int64 `json:"lastConsumeTimestamp"`
 }
 
 // ConsumeStatus is one consumer's throughput and latency counters.
