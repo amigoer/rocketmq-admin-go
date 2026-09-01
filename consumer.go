@@ -11,20 +11,20 @@ import (
 )
 
 // CreateSubscriptionGroup creates or updates a subscription group on one Broker.
+//
+// The config travels in the request body. RocketMQ reads it with
+// RemotingSerializable.decode(request.getBody(), SubscriptionGroupConfig.class)
+// and never looks at the header, so the same fields in extFields reach
+// AdminBrokerProcessor.updateAndCreateSubscriptionGroup as a null config and
+// come back as a NullPointerException.
 func (c *Client) CreateSubscriptionGroup(ctx context.Context, addr string, config SubscriptionGroupConfig) error {
-	extFields := map[string]string{
-		"groupName":                      config.GroupName,
-		"consumeEnable":                  fmt.Sprintf("%t", config.ConsumeEnable),
-		"consumeFromMinEnable":           fmt.Sprintf("%t", config.ConsumeFromMinEnable),
-		"consumeBroadcastEnable":         fmt.Sprintf("%t", config.ConsumeBroadcastEnable),
-		"retryQueueNums":                 fmt.Sprintf("%d", config.RetryQueueNums),
-		"retryMaxTimes":                  fmt.Sprintf("%d", config.RetryMaxTimes),
-		"brokerId":                       fmt.Sprintf("%d", config.BrokerId),
-		"whichBrokerWhenConsumeSlowly":   fmt.Sprintf("%d", config.WhichBrokerWhenConsumeSlowly),
-		"notifyConsumerIdsChangedEnable": fmt.Sprintf("%t", config.NotifyConsumerIdsChangedEnable),
+	body, err := json.Marshal(config)
+	if err != nil {
+		return fmt.Errorf("failed to encode the subscription group config: %w", err)
 	}
 
-	cmd := remoting.NewRequest(remoting.UpdateAndCreateSubscriptionGroup, extFields)
+	cmd := remoting.NewRequest(remoting.UpdateAndCreateSubscriptionGroup, nil)
+	cmd.Body = body
 
 	resp, err := c.invokeBroker(ctx, addr, cmd)
 	if err != nil {
@@ -528,13 +528,16 @@ func (c *Client) QueryConsumeTimeSpan(ctx context.Context, topic, consumerGroup 
 		return nil, err
 	}
 
-	var result []ConsumeTimeSpan
+	var (
+		result  []ConsumeTimeSpan
+		lastErr error
+	)
 
 	for _, brokerData := range routeData.BrokerDatas {
-		var brokerAddr string
-		for _, addr := range brokerData.BrokerAddrs {
-			brokerAddr = addr
-			break
+		// The master holds the offsets a time span is measured against.
+		brokerAddr := brokerData.BrokerAddrs["0"]
+		if brokerAddr == "" {
+			continue
 		}
 
 		extFields := map[string]string{
@@ -545,19 +548,32 @@ func (c *Client) QueryConsumeTimeSpan(ctx context.Context, topic, consumerGroup 
 
 		resp, err := c.invokeBroker(ctx, brokerAddr, cmd)
 		if err != nil {
+			lastErr = err
 			continue
 		}
 
 		if resp.Code != remoting.Success {
+			lastErr = NewAdminError(resp.Code, resp.Remark)
 			continue
 		}
 
-		var spans []ConsumeTimeSpan
-		if err := json.Unmarshal(resp.Body, &spans); err != nil {
+		// QueryConsumeTimeSpanBody wraps the set; the body is an object, not
+		// the bare array this used to decode into.
+		var body struct {
+			ConsumeTimeSpanSet []ConsumeTimeSpan `json:"consumeTimeSpanSet"`
+		}
+		if err := json.Unmarshal(resp.Body, &body); err != nil {
+			lastErr = fmt.Errorf("failed to parse the consume time span: %w", err)
 			continue
 		}
 
-		result = append(result, spans...)
+		result = append(result, body.ConsumeTimeSpanSet...)
+	}
+
+	// A broker that refused must not read as "caught up": the caller cannot
+	// tell those apart, and an empty span set is the answer that misleads.
+	if len(result) == 0 && lastErr != nil {
+		return nil, fmt.Errorf("failed to query the consume time span: %w", lastErr)
 	}
 
 	return result, nil

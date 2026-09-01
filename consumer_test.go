@@ -856,3 +856,89 @@ func TestIntegration_ExamineConsumeStatsConcurrentScopesToTopic(t *testing.T) {
 
 	t.Skip("no consumer group with consume stats to check against")
 }
+
+// The body RocketMQ answers QUERY_CONSUME_TIME_SPAN with, recorded from 5.3.2.
+//
+// QueryConsumeTimeSpanBody wraps the set in an object; this used to decode into
+// a bare []ConsumeTimeSpan. That mismatch is an error rather than a zero value,
+// but the error was dropped by a bare continue, so the call returned an empty
+// slice AND a nil error - a lag query answering "caught up" for every group.
+func TestQueryConsumeTimeSpanBodyIsWrapped(t *testing.T) {
+	raw := []byte(`{"consumeTimeSpanSet":[` +
+		`{"consumeTimeStamp":-1,"consumeTimeStampStr":"1969-12-31#23:59:59:999",` +
+		`"delayTime":1788283418259,"maxTimeStamp":-1,` +
+		`"maxTimeStampStr":"1969-12-31#23:59:59:999",` +
+		`"messageQueue":{"brokerName":"broker-a","queueId":0,"topic":"MQ_STUDIO_E2E"},` +
+		`"minTimeStamp":-1,"minTimeStampStr":"1969-12-31#23:59:59:999"},` +
+		`{"consumeTimeStamp":1788282443631,"consumeTimeStampStr":"2026-09-01#17:07:23:631",` +
+		`"delayTime":1788283418267,"maxTimeStamp":1788283159312,` +
+		`"maxTimeStampStr":"2026-09-01#17:19:19:312",` +
+		`"messageQueue":{"brokerName":"broker-a","queueId":1,"topic":"MQ_STUDIO_E2E"},` +
+		`"minTimeStamp":1788282443631,"minTimeStampStr":"2026-09-01#17:07:23:631"}]}`)
+
+	var body struct {
+		ConsumeTimeSpanSet []ConsumeTimeSpan `json:"consumeTimeSpanSet"`
+	}
+	if err := json.Unmarshal(raw, &body); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	if len(body.ConsumeTimeSpanSet) != 2 {
+		t.Fatalf("consumeTimeSpanSet len=%d want 2", len(body.ConsumeTimeSpanSet))
+	}
+	second := body.ConsumeTimeSpanSet[1]
+	if second.MessageQueue.QueueId != 1 || second.MessageQueue.Topic != "MQ_STUDIO_E2E" {
+		t.Errorf("messageQueue=%+v", second.MessageQueue)
+	}
+	if second.MinTimeStamp != 1788282443631 || second.MaxTimeStamp != 1788283159312 {
+		t.Errorf("min=%d max=%d", second.MinTimeStamp, second.MaxTimeStamp)
+	}
+	if second.ConsumeTimeStamp != 1788282443631 || second.DelayTime != 1788283418267 {
+		t.Errorf("consume=%d delay=%d", second.ConsumeTimeStamp, second.DelayTime)
+	}
+
+	// The shape that was there before, and why it was silent rather than loud.
+	var bare []ConsumeTimeSpan
+	if err := json.Unmarshal(raw, &bare); err == nil {
+		t.Error("the bare array decoded; the wrapper is no longer what distinguishes them")
+	}
+}
+
+// CreateSubscriptionGroup sends this as the request body, and RocketMQ decodes
+// it into its own SubscriptionGroupConfig. The names are therefore the wire
+// contract rather than a local choice: a renamed tag is silently dropped by the
+// broker's decoder and comes back as a group with default settings.
+func TestSubscriptionGroupConfigEncodesRocketMQNames(t *testing.T) {
+	body, err := json.Marshal(SubscriptionGroupConfig{
+		GroupName:                      "G",
+		ConsumeEnable:                  true,
+		ConsumeFromMinEnable:           true,
+		ConsumeBroadcastEnable:         true,
+		RetryQueueNums:                 1,
+		RetryMaxTimes:                  16,
+		BrokerId:                       0,
+		WhichBrokerWhenConsumeSlowly:   1,
+		NotifyConsumerIdsChangedEnable: true,
+	})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	var decoded map[string]any
+	if err := json.Unmarshal(body, &decoded); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	for _, name := range []string{
+		"groupName", "consumeEnable", "consumeFromMinEnable", "consumeBroadcastEnable",
+		"retryQueueNums", "retryMaxTimes", "brokerId", "whichBrokerWhenConsumeSlowly",
+		"notifyConsumerIdsChangedEnable",
+	} {
+		if _, ok := decoded[name]; !ok {
+			t.Errorf("the body has no %q; the broker would decode it as a default", name)
+		}
+	}
+	if len(decoded) != 9 {
+		t.Errorf("the body carries %d fields, want 9: %s", len(decoded), body)
+	}
+}
