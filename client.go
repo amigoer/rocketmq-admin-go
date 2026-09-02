@@ -90,6 +90,10 @@ func (c *Client) IsClosed() bool {
 
 // invokeNameServer tries each configured NameServer until one answers.
 func (c *Client) invokeNameServer(ctx context.Context, cmd *remoting.RemotingCommand) (*remoting.RemotingCommand, error) {
+	// Nothing in the header varies by NameServer, so one signature covers
+	// every address this loop tries.
+	remoting.Sign(cmd, c.opts.AccessKey, c.opts.SecretKey)
+
 	var lastErr error
 	for _, addr := range c.opts.NameServers {
 		conn, err := c.pool.GetOrCreate(addr)
@@ -129,6 +133,10 @@ func (c *Client) invokeBroker(ctx context.Context, brokerAddr string, cmd *remot
 			}
 		}
 	}
+
+	// After bname, and once per Broker: the field is part of what is signed,
+	// and a caller walking the cluster reuses one command for every address.
+	remoting.Sign(cmd, c.opts.AccessKey, c.opts.SecretKey)
 
 	resp, err := conn.InvokeSync(ctx, cmd)
 	if err != nil {

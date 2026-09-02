@@ -202,3 +202,32 @@ standard parser accepts. Responses are repaired before unmarshalling — see
 naming the target Broker and rejects requests without one. The client learns
 Broker names from route and cluster responses and fills the header in itself —
 see [`brokername.go`](../brokername.go).
+
+## 7. ACL 1.0 request signing
+
+A Broker with `aclEnable=true` authenticates every admin request from two
+header fields the client adds: `AccessKey`, and a `Signature` over the rest of
+the request — see [`protocol/remoting/acl.go`](../protocol/remoting/acl.go).
+
+The signed content is every header field except `Signature`, sorted by field
+name, values concatenated with no separator and no names, with the body
+appended. `PlainAccessValidator` rebuilds exactly that from the `extFields` map
+it received and compares. The digest is HMAC-SHA1 under the secret key,
+Base64-encoded.
+
+Two consequences of the Broker rebuilding the content from what it *received*:
+
+**Sign last.** Any field added after signing is one the Broker includes and the
+client did not, so the two contents differ and the comparison fails. `bname` is
+the one that bites, because it is filled in per Broker rather than by the
+caller — which also means a command sent to a second Broker has to be signed
+again.
+
+**A signature that verifies is not proof the client signs correctly.**
+`PlainPermissionManager.validate` matches the global whitelist first and
+returns before it looks at any signature, so on a cluster whose
+`globalWhiteRemoteAddresses` covers the caller, wrong credentials and no
+credentials both work. Test against a whitelist that covers nobody — and note
+that an *empty* list is not that: the update request carries the list as one
+comma-separated string, and the empty string is read back as RocketMQ's null
+strategy, which matches every caller.
